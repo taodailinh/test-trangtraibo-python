@@ -13,6 +13,9 @@ options.add_experimental_option("detach", True)
 
 driver = webdriver.Chrome(options=options)
 
+# maximize the window
+driver.maximize_window()
+
 driver.get("https://test-trangtraibo.aristqnu.com/")
 
 driver.implicitly_wait(10)
@@ -31,12 +34,11 @@ form.submit()
 
 driver.implicitly_wait(10)
 
-# driver.get('https://test-trangtraibo.aristqnu.com/quanlydan/danhsachdan')
-farm = driver.find_elements(By.TAG_NAME, "option")
-print(farm[0].text)
+driver.get("https://test-trangtraibo.aristqnu.com/quanlydan/danhsachdan")
 
 # driver.execute_script(script)
 
-driver.get()
+cowCounter = driver.find_element(By.CLASS_NAME, "e-pagecountmsg")
+print(cowCounter.text)
 
 driver.quit()

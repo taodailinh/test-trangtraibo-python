@@ -1,11 +1,27 @@
+from pymongo import MongoClient
+from openpyxl import Workbook
 import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from selenium.webdriver.support.wait import WebDriverWait
+import time
+from countCount import countCow
+from query import cowCount
 
 os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
+client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
+db = client["quanlytrangtrai_2807_clone"]
+boNhapTrai = db["BoNhapTrai"]
+
+# Tìm 1 con bò bằng sô tai và in số chip
+# for i in boNhapTrai.find({"SoTai": "F040923"}):
+#     print(i["SoChip"])
+
+# Đém tất cả bê bò trong danh sách bò
+soBo = cowCount(boNhapTrai, "NhomBo", "Bo") + cowCount(boNhapTrai, "NhomBo", "Be")
+print(soBo)
 
 # Add this to keep webdriver stay running
 options = webdriver.ChromeOptions()
@@ -36,9 +52,45 @@ driver.implicitly_wait(10)
 
 driver.get("https://test-trangtraibo.aristqnu.com/quanlydan/danhsachdan")
 
-# driver.execute_script(script)
+wb = Workbook()
 
-cowCounter = driver.find_element(By.CLASS_NAME, "e-pagecountmsg")
-print(cowCounter.text)
 
+time.sleep(10)
+
+danhSachDan = countCow(driver, "e-pagecountmsg")
+
+print(danhSachDan)
+ws = wb.active
+ws["A1"] = "Bê bò"
+ws["B1"] = danhSachDan
+if danhSachDan == 0:
+    ws["C1"] = "Load chậm hơn 10s"
+if danhSachDan != soBo:
+    ws["D1"] = "Không khớp query từ db"
+# danhSachDan = cowCounter.text[cowCounter.text.find("(") + 1 : cowCounter.text.find(" ")]
+
+# print(danhSachDan)
+# Nhập bê
+nhapBe = driver.find_element(
+    By.XPATH, "//*[@id='div-show-column-id']/div[2]/div/span[5]/button[1]"
+)
+nhapBe.click()
+
+
+driver.switch_to.new_window("tab")
+driver.get("https://test-trangtraibo.aristqnu.com/thuy/danhsachthuy")
+
+
+# Kiểm tra tab thú y có load được danh sách bò nhâp viện không, điền file excel số lượng bò đang nằm viện
+time.sleep(10)
+boNamVien = countCow(driver, "e-pagecountmsg")
+
+print(boNamVien)
+
+ws["A2"] = "Bò nằm viện"
+ws["B2"] = boNamVien
+if boNamVien == 0:
+    ws["C2"] = "Load chậm hơn 10s"
 driver.quit()
+
+wb.save("20230904.xlsx")

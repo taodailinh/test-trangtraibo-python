@@ -76,6 +76,22 @@ nhapBe = driver.find_element(
 )
 nhapBe.click()
 
+#Nhập số tai
+soTaiBe = driver.find_element(
+    By.XPATH,
+    "/html/body/div[2]/div[1]/div[2]/div/div/div[2]/form/div/div[3]/div/input",
+)
+soTaiBe.send_keys("F202300609")
+
+#Nhập số ID
+soID = driver.find_element(
+    By.XPATH,
+    "/html/body/div[3]/div[1]/div[2]/div/div/div[2]/form/div/div[4]/div/input",
+)
+soTaiBe.send_keys("F202300609")
+
+
+
 
 driver.switch_to.new_window("tab")
 driver.get("https://test-trangtraibo.aristqnu.com/thuy/danhsachthuy")

@@ -12,7 +12,7 @@ from datetime import datetime
 
 danhSachTrai = ["IA PÚCH", "EA H'LEO", "KOUN MOM", "SNUOL", "SAYSETTHA"]
 
-trai = 2
+trai = 4
 
 # Add this to keep webdriver stay running
 os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
@@ -32,7 +32,7 @@ driver.implicitly_wait(10)
 
 username = driver.find_element(By.ID, "Input_UserName")
 
-username.send_keys("huyhvd")
+username.send_keys("chinhntk")
 
 
 password = driver.find_element(By.ID, "password-field")

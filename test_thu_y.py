@@ -7,26 +7,27 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 import time
+from selenium.webdriver import Keys, ActionChains
 
-# from countCount import countCow
-# from query import cowCount
+from countCount import countCow
+from query import cowCount
 
 os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
 
-"""
-#Kết nối db
+
+# Kết nối db
 client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
 db = client["quanlytrangtrai_2807_clone"]
 boNhapTrai = db["BoNhapTrai"]
-"""
+
 
 # Tìm 1 con bò bằng sô tai và in số chip
 # for i in boNhapTrai.find({"SoTai": "F040923"}):
 #     print(i["SoChip"])
 
 # Đém tất cả bê bò trong danh sách bò
-# soBo = cowCount(boNhapTrai, "NhomBo", "Bo") + cowCount(boNhapTrai, "NhomBo", "Be")
-# print(soBo)
+soBo = cowCount(boNhapTrai, "NhomBo", "Bo") + cowCount(boNhapTrai, "NhomBo", "Be")
+print(soBo)
 
 # Add this to keep webdriver stay running
 options = webdriver.ChromeOptions()
@@ -75,6 +76,8 @@ if danhSachDan != soBo:
 # danhSachDan = cowCounter.text[cowCounter.text.find("(") + 1 : cowCounter.text.find(" ")]
 
 # print(danhSachDan)
+
+
 # Nhập bê
 nhapBe = driver.find_element(
     By.XPATH, "//*[@id='div-show-column-id']/div[2]/div/span[5]/button[1]"
@@ -107,8 +110,10 @@ giongBe = driver.find_element(
     "//label[contains(text(),'Giống bê')]",
 ).find_element(By.XPATH, "..")
 giongBe.click()
-giongBeDuocChon = giongBe.find_element(By.XPATH, "//li[contains(text(),'Senepol')]")
-giongBeDuocChon.click()
+time.sleep(2)
+ActionChains(driver).send_keys("Senepol").send_keys(Keys.ENTER).perform()
+# giongBeDuocChon = driver.find_element(By.XPATH, "//li[contains(text(),'Senepol')]")
+# giongBeDuocChon.click()
 # driver.execute_script("arguments[0].value='Senepol'", giongBe)
 
 gioiTinh = driver.find_element(
@@ -153,8 +158,10 @@ driver.execute_script("arguments[0].value='A2.02'", oChuong)
 nhomBe = driver.find_element(
     By.XPATH,
     "//label[contains(text(),'Nhóm bê')]",
-).find_element(By.XPATH, "preceding-sibling::*")
-driver.execute_script("arguments[0].value='Nhóm bê'", nhomBe)
+).find_element(By.XPATH, "..")
+nhomBe.click()
+ActionChains(driver).send_keys("Nhóm bê").send_keys(Keys.ENTER).perform()
+
 
 nguoiBaoDe = driver.find_element(
     By.XPATH,

@@ -9,14 +9,19 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 import time
 from selenium.webdriver import Keys, ActionChains
+import inspect
 
 
 os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
 
 
-def nhapbe(client: MongoClient, dbName, page, collectionName="BoNhapTrai"):
+def nhapbe(client: MongoClient, dbName, page, user, pw, collectionName="BoNhapTrai"):
     # Kết nối db
     # client = MongoClient("mongodb://localhost:27017/")
+    print("Caller path: " + caller_path)
+    script_path = os.path.dirname(os.path.abspath(__file__))
+    print("Path of the function")
+    print(script_path)
     database = client[dbName]
     boNhapTrai = database[collectionName]
     # db = client["quanlytrangtrai_0910"]
@@ -35,24 +40,24 @@ def nhapbe(client: MongoClient, dbName, page, collectionName="BoNhapTrai"):
     # maximize the window
     driver.maximize_window()
 
-    driver.get(page)
+    driver.get(str(page))
 
     driver.implicitly_wait(10)
 
     username = driver.find_element(By.ID, "Input_UserName")
 
-    username.send_keys("admin")
+    username.send_keys(str(user))
 
     password = driver.find_element(By.ID, "password-field")
 
-    password.send_keys("admintest")
+    password.send_keys(str(pw))
 
     form = driver.find_element(By.CLASS_NAME, "signin-form")
     form.submit()
 
     driver.implicitly_wait(10)
 
-    driver.get(page + "quanlydan/danhsachdan")
+    driver.get(str(page) + "quanlydan/danhsachdan")
 
     time.sleep(2)
     """
@@ -106,7 +111,9 @@ def nhapbe(client: MongoClient, dbName, page, collectionName="BoNhapTrai"):
     ).find_element(By.XPATH, "..")
     giongBe.click()
     time.sleep(2)
-    ActionChains(driver).send_keys(ws["F2"].value).send_keys(Keys.ENTER).perform()
+    be = driver.find_element(By.XPATH, "//li[@data-value='Senepol']")
+    be.click()
+    # ActionChains(driver).send_keys(ws["F2"].value).send_keys(Keys.ENTER).perform()
     # giongBeDuocChon = driver.find_element(By.XPATH, "//li[contains(text(),'Senepol')]")
     # giongBeDuocChon.click()
     # driver.execute_script("arguments[0].value='Senepol'", giongBe)

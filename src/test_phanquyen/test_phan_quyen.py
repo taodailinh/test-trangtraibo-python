@@ -45,7 +45,13 @@ def testPhanQuyenUser(user, pw, page, trai=1):
     )
     chonTrai.select_by_visible_text(danhSachTrai[trai - 1])
 
-    wb = openpyxl.load_workbook("link.xlsx")
+    script_path = os.path.dirname(os.path.abspath(__file__))
+    print("Current path")
+    print(script_path)
+
+    workbook_path = os.path.join(script_path, "link.xlsx")
+
+    wb = openpyxl.load_workbook(workbook_path)
     ws = wb.active
 
     errorLog = openpyxl.Workbook()

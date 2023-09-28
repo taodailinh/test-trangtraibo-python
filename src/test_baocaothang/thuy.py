@@ -1,10 +1,10 @@
 from pymongo import MongoClient
 from datetime import datetime
 import time
-from openpyxl import Workbook
 
 date_format = "%Y-%m-%d"
 
+startTime = time.time()
 # Kết nối db
 # client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
 # db = client["quanlytrangtrai_0910"]
@@ -657,8 +657,6 @@ def tangTrongBinhQuan_boVoBeoNho(client: MongoClient, dbName, collectionName):
     for result in results:
         print(result)
 """
-
-
 # 20	Tổng số bò vỗ béo trung
 def tongSo_boVoBeoTrung(client: MongoClient, dbName, collectionName):
     db = client[dbName]
@@ -684,7 +682,6 @@ def tongSo_boVoBeoTrung(client: MongoClient, dbName, collectionName):
     print("20. Số lượng bo vo beo trung")
     for result in results:
         print(result)
-
 
 # 21	Tăng trọng bình quân của BVB trung
 # 22	Tổng số bò vỗ béo lớn
@@ -713,128 +710,10 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName):
     for result in results:
         print(result)
 
-    # 23	Tăng trọng bình quân của BVB lớn
-    # 24	Tổng số bò sinh sản nhập trại
-
-
-def tongSo_nhapTrai_boSinhSan(
-    client: MongoClient, dbName, collectionName, startdate, enddate
-):
-    db = client[dbName]
-    col = db[collectionName]
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "Bo"},
-                    {"NguonGoc": "BoNhap"},
-                    {"NgayNhap": {"$gte": startDate, "$lte": endDate}},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("24. So luong bo sinh san nhap trai")
-    for result in results:
-        print(result)
-
-    # 25	Tổng số bê nhập trại
-
-
-def tongSo_nhapTrai_be(client: MongoClient, dbName, collectionName, startdate, enddate):
-    db = client[dbName]
-    col = db[collectionName]
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"NguonGoc": "BoNhap"},
-                    {"NgaySinh": {"$ne": None}},
-                    {"NgayNhap": {"$gte": startDate, "$lte": endDate}},
-                ]
-            }
-        },
-        {"$project": {"dayold": {"$subtract": ["$NgayNhap", "$NgaySinh"]}}},
-        {"$match": {"dayold": {"$lte": 242 * 1000 * 60 * 60 * 24}}},
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("25. So luong be nhap trai")
-    for result in results:
-        print(result)
-
-    # 26	Tổng số bê sinh ra
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoTrung"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("20. Số lượng bo vo beo trung")
-    for result in results:
-        print(result)
-
-
-# 21	Tăng trọng bình quân của BVB trung
-# 22	Tổng số bò vỗ béo lớn
-def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName, startDate, endDate):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoLon"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("22. Số lượng bo vo beo lon")
-    for result in results:
-        print(result)
-
-
+# 23	Tăng trọng bình quân của BVB lớn
+# 24	Tổng số bò sinh sản nhập trại
+# 25	Tổng số bê nhập trại
+# 26	Tổng số bê sinh ra
 # 27	Tổng số bê chết
 # 28	Tổng số bò giống xuất bán
 # 29	Tổng số bò vỗ béo xuất bán
@@ -874,101 +753,3 @@ def danhsachdan(client: MongoClient, dbName, collectionName, pageNumber, pageSiz
     print("10. Số lượng bê đực hậu bị")
     for result in results:
         print(result)
-
-
-# export thong tin dan
-
-
-def exportThongTinDan(client: MongoClient, dbName, collectionName):
-    startTime = time.time()
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$or": [
-                    {"NhomBo": "Be"},
-                    {"NhomBo": "Bo"},
-                ]
-            }
-        },
-        {
-            "$project": {
-                "SoTai": 1,
-                "SoChip": 1,
-                "GiongBo": 1,
-                "NgayNhap": 1,
-                "NgaySinh": 1,
-                "PhanLoaiBo": 1,
-                "TrongLuongNhap": 1,
-                "MauDa": 1,
-                "OChuong": 1,
-                "LuaDe": 1,
-                "NhomBo": 1,
-                "GioiTinhBe": 1,
-            }
-        },
-    ]
-    print("bat dau lay du lieu")
-    results = col.aggregate(pipeline)
-    giaiDoanBo = {
-        "BoMoiPhoi": "Bò mới phối",
-        "BoMangThaiNho": "Bò mang thai nhỏ",
-        "BoChoPhoi": "Bò chờ phối",
-        "BoXuLySinhSan": "Bò xử lý sinh sản",
-        "BoMeNuoiConNho": "Bò mẹ nuôi con nhỏ",
-        "BoChoDe": "Bò chờ đẻ",
-        "BoMangThaiLon": "Bò mang thai lớn",
-        "BoMeNuoiConLon": "Bò mẹ nuôi con lớn",
-        "BoVoBeoNho": "Bò vỗ béo nhỏ",
-        "BoHauBiChoPhoi": "Bò hậu bị chờ phối",
-        "BoNuoiThitBCT": "Bò nuôi thịt BCT",
-        "BoHauBi": "Bò hậu bị chờ phối",
-        "BoNuoiThitBCT8_12": "Bò nuôi thịt BCT 8-12 tháng",
-        "BeCaiSua": "Bê cai sữa",
-        "BeTheoMe": "Bê theo mẹ",
-        "BeSinh": "Bê sinh",
-        "BoCachLy": "Bò cách ly",
-        "": "",
-        None: "",
-    }
-    wb = Workbook()
-    ws = wb.active
-    print("bat dau xuat du lieu")
-    table_headings = [
-        "So tai",
-        "So chip",
-        "Giong bo",
-        "Ngay nhap",
-        "Ngay sinh",
-        "Phan loai bo",
-        "Trong luong nhap",
-        "Mau long",
-        "O chuong",
-        "Lua de",
-        "Nhom bo",
-        "Gioi tinh",
-    ]
-    ws.append(table_headings)
-    for result in results:
-        row_data = [
-            result["SoTai"],
-            result["SoChip"],
-            result["GiongBo"],
-            result["NgayNhap"],
-            result["NgaySinh"],
-            giaiDoanBo[result["PhanLoaiBo"]],
-            result["TrongLuongNhap"],
-            result["MauDa"],
-            result["OChuong"],
-            result["LuaDe"],
-            result["NhomBo"],
-            result["GioiTinhBe"],
-        ]
-        ws.append(row_data)
-    print("Hoan tat ghi file")
-    fileName = datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
-    wb.save(fileName)
-    print("hoan tat luu file")
-    finishTime = time.time()
-    print("tong thoi gian: " + str(finishTime - startTime))

@@ -713,99 +713,6 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName):
     for result in results:
         print(result)
 
-    # 23	Tăng trọng bình quân của BVB lớn
-    # 24	Tổng số bò sinh sản nhập trại
-
-
-def tongSo_nhapTrai_boSinhSan(
-    client: MongoClient, dbName, collectionName, startdate, enddate
-):
-    db = client[dbName]
-    col = db[collectionName]
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "Bo"},
-                    {"NguonGoc": "BoNhap"},
-                    {"NgayNhap": {"$gte": startDate, "$lte": endDate}},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("24. So luong bo sinh san nhap trai")
-    for result in results:
-        print(result)
-
-    # 25	Tổng số bê nhập trại
-
-
-def tongSo_nhapTrai_be(client: MongoClient, dbName, collectionName, startdate, enddate):
-    db = client[dbName]
-    col = db[collectionName]
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"NguonGoc": "BoNhap"},
-                    {"NgaySinh": {"$ne": None}},
-                    {"NgayNhap": {"$gte": startDate, "$lte": endDate}},
-                ]
-            }
-        },
-        {"$project": {"dayold": {"$subtract": ["$NgayNhap", "$NgaySinh"]}}},
-        {"$match": {"dayold": {"$lte": 242 * 1000 * 60 * 60 * 24}}},
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("25. So luong be nhap trai")
-    for result in results:
-        print(result)
-
-    # 26	Tổng số bê sinh ra
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoTrung"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("20. Số lượng bo vo beo trung")
-    for result in results:
-        print(result)
-
 
 # 21	Tăng trọng bình quân của BVB trung
 # 22	Tổng số bò vỗ béo lớn
@@ -835,11 +742,156 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName, startDate, en
         print(result)
 
 
+# 23	Tăng trọng bình quân của BVB lớn
+# 24	Tổng số bò sinh sản nhập trại
+def tongSo_nhapTrai_boSinhSan(
+    client: MongoClient, dbName, collectionName, startdate, enddate
+):
+    ngaySinhMacDinh = datetime.strptime("2022-01-01", date_format)
+    ngayTuoiToiThieu = 240 * 1000 * 60 * 60 * 24
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NguonGoc": "BoNhap"},
+                    {"NgayNhap": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {
+            "$project": {
+                "dayold": {
+                    "$cond": [
+                        {"$eq": ["$NgaySinh", None]},
+                        {"$subtract": ["$NgayNhap", ngaySinhMacDinh]},
+                        {"$subtract": ["$NgayNhap", "$NgaySinh"]},
+                    ]
+                }
+            }
+        },
+        {"$match": {"dayold": {"$gt": ngayTuoiToiThieu}}},
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+            }
+        },
+        {"$project": {"_id": 0, "soLuong": 1}},
+    ]
+    results = col.aggregate(pipeline)
+    print("24. So luong bo sinh san nhap trai")
+    for result in results:
+        print(result)
+
+
+# 25	Tổng số bê nhập trại
+def tongSo_nhapTrai_be(client: MongoClient, dbName, collectionName, startdate, enddate):
+    db = client[dbName]
+    col = db[collectionName]
+    ngayTuoiToiDa = 240 * 1000 * 60 * 60 * 24
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NguonGoc": "BoNhap"},
+                    {"NgaySinh": {"$ne": None}},
+                    {"NgayNhap": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {"$project": {"dayold": {"$subtract": ["$NgayNhap", "$NgaySinh"]}}},
+        {"$match": {"dayold": {"$lte": ngayTuoiToiDa}}},
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+            }
+        },
+        {"$project": {"_id": 0, "soLuong": 1}},
+    ]
+    results = col.aggregate(pipeline)
+    print("25. So luong be nhap trai")
+    for result in results:
+        print(result)
+
+
+# 26	Tổng số bê sinh ra
+def tongSo_beSinh(client: MongoClient, dbName, collectionName, startdate, enddate):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NguonGoc": "BeSinh"},
+                    {"NgaySinh": {"$ne": None}},
+                    {"NgaySinh": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+            }
+        },
+        {"$project": {"_id": 0, "soLuong": 1}},
+    ]
+    results = col.aggregate(pipeline)
+    print("26. So luong be duoc sinh ra")
+    for result in results:
+        print(result)
+
+
 # 27	Tổng số bê chết
+def tongSo_chet_be(client: MongoClient, dbName, collectionName, startdate, enddate):
+    db = client[dbName]
+    col = db[collectionName]
+    ngayTuoiToiDa = 240 * 1000 * 60 * 60 * 24
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgaySinh": {"$ne": None}},
+                    {"NgayChet": {"$ne": None}},
+                    {"NgayChet": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {"$project": {"daylive": {"$subtract": ["$NgayChet", "$NgaySinh"]}}},
+        {"$match": {"daylive": {"$lte": ngayTuoiToiDa}}},
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+            }
+        },
+        {"$project": {"_id": 0, "soLuong": 1}},
+    ]
+    results = col.aggregate(pipeline)
+    print("27. So luong be chet")
+    for result in results:
+        print(result)
+
+
 # 28	Tổng số bò giống xuất bán
+
 # 29	Tổng số bò vỗ béo xuất bán
+
 # 30	Tổng số bê bệnh đang chờ thanh lý
+
 # 31	Tổng số bò bệnh đang chờ thanh lý
+
 
 
 # Print danh sach dan

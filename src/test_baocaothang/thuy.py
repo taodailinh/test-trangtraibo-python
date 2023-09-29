@@ -5,315 +5,144 @@ import time
 date_format = "%Y-%m-%d"
 
 startTime = time.time()
-# Kết nối db
-# client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
-# db = client["quanlytrangtrai_0910"]
+
+giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
+
+giaiDoanBoChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
 
 
-def printAllKetQuaKhamThai(client: MongoClient, databaseName, collectionName):
-    try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        ketquakhamthai = khamThai.distinct("KetQuaKham")
-        for ketqua in ketquakhamthai:
-            print(ketqua)
-        return 0
-    except:
-        return 1
-
-
-def printAllKetQuaKhamThaiInDateRange(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
-):
-    try:
-        startDate = datetime.strptime(startdate, date_format)
-        print(startDate)
-        endDate = datetime.strptime(enddate, date_format)
-        print(endDate)
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        pipline = [
-            {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
-            {"$group": {"_id": None, "uniketquakham": {"$addToSet": "$KetQuaKham"}}},
-        ]
-        ketquakhamthai = khamThai.aggregate(pipline)
-        for ketqua in ketquakhamthai:
-            print(ketqua)
-        return 0
-    except:
-        print("Da co loi xay ra")
-        return 1
-
-
-def soLuongBoKham(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
-):
-    try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        startDate = datetime.strptime(startdate, date_format)
-        endDate = datetime.strptime(enddate, date_format)
-        pipeline = [
-            {
-                "$match": {
-                    "NgayKham": {"$gte": startDate, "$lte": endDate},
-                }
-            },
-            {
-                "$group": {
-                    "_id": "null",
-                    "total": {"$count": {}},
-                }
-            },
-        ]
-        soLuongBoKhamThai = khamThai.aggregate(pipeline)
-        for bo in soLuongBoKhamThai:
-            print("Số lượng bò:" + str(bo.get("total")))
-        print("end")
-        return 0
-    except:
-        return 1
-
-
-def soLuongBoKhamPhoiLan1(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
-):
-    try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        startDate = datetime.strptime(startdate, date_format)
-        endDate = datetime.strptime(enddate, date_format)
-        pipeline = [
-            {
-                "$lookup": {
-                    "from": "BoNhapTrai",
-                    "localField": "Bo.SoTai",
-                    "foreignField": "SoTai",
-                    "as": "bo",
-                }
-            },
-            {
-                "$match": {
-                    "NgayKham": {"$gte": startDate, "$lte": endDate},
-                    "KetQuaKham": "Có thai",
-                    "$expr": {
-                        "$eq": [
-                            {
-                                "$arrayElemAt": [
-                                    "$bo.ThongTinPhoiGiongs.LanPhoi",
-                                    -1,
-                                ],
-                            },
-                            1,
-                        ],
-                    },
-                }
-            },
-            {
-                "$group": {
-                    "_id": "null",
-                    "total": {"$count": {}},
-                }
-            },
-        ]
-        soLuongBoKhamThai = khamThai.aggregate(pipeline)
-        for bo in soLuongBoKhamThai:
-            print("Số lượng bò:" + str(bo.get("total")))
-        return 0
-    except:
-        print("There is something wrong")
-        return 1
-
-
-# Lấy danh sách bò có lần phối cuối cùng thỏa mãn điều kiện
-def boPhoiLan1(client: MongoClient, databaseName, collectionName):
-    db = client[databaseName]
-    danBo = db[collectionName]
-    startDate = datetime(2023, 9, 1)
-    endDate = datetime(2023, 9, 18)
+# 1,1	Tổng số bò đã điều trị khỏi bệnh
+def tongSo_boKhoiBenh(client: MongoClient, dbName, collectionName, startdate, enddate):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
     pipeline = [
-        # Giới hạn ngày giờ
         {
             "$match": {
-                "$NgayThucHien": {
-                    "$gte": startDate,
-                    "$lte": endDate,
-                },
-                "$LanPhoi": 1,
+                "$and": [
+                    {"TinhTrangDieuTri": "KhoiBenh"},
+                    {"NgayKetThucDieuTri": {"$gte": startDate, "$lte": endDate}},
+                ]
             }
         },
-        # group lại
         {
             "$group": {
-                "_id": "$SoTai",
+                "_id": "null",
+                "soLuong": {"$count": {}},
             }
         },
-        # project ra document
-        {"$project": {"_id": 0, "$count": "TongSoLuong"}},
+        {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = danBo.aggregate(pipeline)
+    results = col.aggregate(pipeline)
+    print("1.1 Tong so bo dieu tri khoi benh")
     for result in results:
         print(result)
 
 
-# 0 Be duoi 100 ngay
-
-
-def beDuoi100Ngay(client: MongoClient, dbName, collectionName, danhsachnhombo):
+# 1,2	Tổng số bò đã điều trị  (Chết):
+def tongSo_boChetCoDieuTri(
+    client: MongoClient, dbName, collectionName, startdate, enddate
+):
     db = client[dbName]
     col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
     pipeline = [
-        {"$match": {"NhomBo": "Be"}},
+        {
+            "$match": {
+                "$and": [
+                    {"TinhTrangDieuTri": "Chet"},
+                    {"NgayKetThucDieuTri": {"$ne": None}},
+                    {"NgayKetThucDieuTri": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+            }
+        },
+        {"$project": {"_id": 0, "soLuong": 1}},
+    ]
+    results = col.aggregate(pipeline)
+    print("1.2 Tong so bo dieu tri chet")
+    for result in results:
+        print(result)
+
+
+# 1,3	Tổng số bò mắc bệnh đã đề nghị bán thanh lý
+def tongSo_boDaDeXuatThanhLy(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"HinhThucThanhLy": "DeXuatThanhLy"},
+                    {"NgayDeXuat": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
         {
             "$project": {
-                "SoTai": 1,
-                "NgayTuoi": {
-                    "$floor": {
-                        "$divide": [
-                            {
-                                "$subtract": [
-                                    "$$NOW",
-                                    "$NgaySinh",
-                                ]
-                            },
-                            1000 * 60 * 60 * 24,
-                        ]
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
                     }
                 },
             }
         },
-        {"$limit": 100},
     ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
+    results = col.aggregate(pipeline)
+    reportName = "1.3 Tong so bo da de xuat thanh ly"
+    print(reportName)
+    for result in results:
+        print(result)
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
 
 
-# 1	Tổng số bò chờ phối, bo giai doan bo cho phoi va bo
+# Tổng số bò vỗ béo đã và đang điều trị
 
 
-def soBoChoPhoi(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
+# 2,1	Tổng số bò vỗ béo nhỏ đã và đang điều trị
+def tongSo_boDaDangDieuTri_boVoBeoNho(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
 ):
+    db = client[dbName]
+    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {"$match": {"$and": [{"NhomBo": "Bo"}, {"TenantId": "0"}]}},
-        {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
-        {
-            "$match": {"PhanLoaiBo": {"$in": ["BoChoPhoi", "BoHauBiChoPhoi"]}},
-        },
-        {"$group": {"_id": "null", "TongSoChoPhoi": {"$count": {}}}},
-        {"$project": {"_id": 0, "TongSoChoPhoi": 1}},
-    ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
-
-
-# 2	Tổng số bò mang thai từ 2-7 tháng
-def soBoMangThaiNho(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {"$match": {"NhomBo": "Bo"}},
-        {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
-        {
-            "$match": {"PhanLoaiBo": "BoMangThaiNho"},
-        },
-        {"$group": {"_id": "null", "BoMangThaiNho": {"$count": {}}}},
-        {"$project": {"_id": 0, "BoMangThaiNho": 1}},
-    ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
-
-
-# 3	Tổng số bò mang thai, chờ đẻ từ 8-9 tháng
-def soBoMangThaiLonChoDe(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {"$match": {"NhomBo": "Bo"}},
-        {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
-        {
-            "$match": {"PhanLoaiBo": {"$in": ["BoMangThaiLon", "BoChoDe"]}},
-        },
-        {"$group": {"_id": "null", "BoMangThaiLonChoDe": {"$count": {}}}},
-        {"$project": {"_id": 0, "BoMangThaiLonChoDe": 1}},
-    ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
-
-
-# 4	Tổng số bò mẹ nuôi con từ 0 - 1 tháng
-def soBoNuoiConNho(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {"$match": {"NhomBo": "Bo"}},
-        {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
-        {
-            "$match": {"PhanLoaiBo": "BoMeNuoiConNho"},
-        },
-        {"$group": {"_id": "null", "BoNuoiConNho": {"$count": {}}}},
-        {"$project": {"_id": 0, "BoNuoiConNho": 1}},
-    ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
-
-
-# 5	Tổng số bò mẹ nuôi con từ ≥ 1 - 4 tháng
-def soBoNuoiConLon(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {"$match": {"NhomBo": "Bo"}},
-        {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
-        {
-            "$match": {"PhanLoaiBo": "BoMeNuoiConLon"},
-        },
-        {"$group": {"_id": "null", "BoMeNuoiConLon": {"$count": {}}}},
-        {"$project": {"_id": 0, "BoMeNuoiConLon": 1}},
-    ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
-
-
-# 6	Trọng lượng bình quân của bê cái cai sữa
-
-
-def trongLuongBinhQuan_beCaiCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
     pipeline = [
         {
             "$match": {
                 "$and": [
-                    {"NhomBo": "Be"},
-                    {"PhanLoaiBo": "BeCaiSua"},
-                    {"GioiTinhBe": "Cái"},
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoVoBeoNho"},
                 ]
             }
         },
@@ -321,435 +150,847 @@ def trongLuongBinhQuan_beCaiCaiSua(client: MongoClient, dbName, collectionName):
             "$group": {
                 "_id": "null",
                 "soLuong": {"$count": {}},
-                "tongTrong": {"$sum": "$TrongLuongNhap"},
-                "trongLuongBinhQuan": {"$avg": "$TrongLuongNhap"},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
-        {"$project": {"_id": 0, "soLuong": 1, "tongTrong": 1, "trongLuongBinhQuan": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("6. Trong luong binh quan be cai cai sua")
-    for result in results:
-        print(result)
-
-
-# 7	Trọng lượng bình quân của bê đực cai sữa
-
-
-def trongLuongBinhQuan_beDucCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "Be"},
-                    {"PhanLoaiBo": "BeCaiSua"},
-                    {"GioiTinhBe": "Đực"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-                "tongTrong": {"$sum": "$TrongLuongNhap"},
-                "trongLuongBinhQuan": {"$avg": "$TrongLuongNhap"},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1, "tongTrong": 1, "trongLuongBinhQuan": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("7. Trong luong binh quan be đực cai sua")
-    for result in results:
-        print(result)
-
-
-# 8	Tổng số bê cái cai sữa ≥ 4- 8 tháng
-def tongSo_beCaiCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "Be"},
-                    {"PhanLoaiBo": "BeCaiSua"},
-                    {"GioiTinhBe": "Cái"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("8. Số lượng bê cái cai sữa")
-    for result in results:
-        print(result)
-
-
-# 9	Tổng số bê đực cai sữa ≥ 4- 8 tháng
-def tongSo_beDucCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "Be"},
-                    {"PhanLoaiBo": "BeCaiSua"},
-                    {"GioiTinhBe": "Đực"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("9. Số lượng bê đực cai sữa")
-    for result in results:
-        print(result)
-
-
-# 10	Tổng số bê cái hậu bị 9- 12 tháng
-def tongSo_beCaiHauBi(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"PhanLoaiBo": "BoHauBi"},
-                    {"GioiTinhBe": "Cái"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("10. Số lượng bê cái hậu bị")
-    for result in results:
-        print(result)
-
-
-# 11	Tổng số bê đực hậu bị 9- 12 tháng
-def tongSo_beDucHauBi(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"PhanLoaiBo": "BoHauBi"},
-                    {"GioiTinhBe": "Đực"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("10. Số lượng bê đực hậu bị")
-    for result in results:
-        print(result)
-
-
-# 12	Tổng số bê đực nuôi thịt BCT bị 9- 12 tháng
-def tongSo_beDucNuoiThit_9_12(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoNuoiThitBCT"},
-                    {"GioiTinhBe": "Đực"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("12. Số lượng bê đực nuoi thit BCT")
-    for result in results:
-        print(result)
-
-
-# 13	Tổng số bê cái nuôi thịt BCT bị 9- 12 tháng
-def tongSo_beCaiNuoiThit_9_12(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoNuoiThitBCT"},
-                    {"GioiTinhBe": "Cái"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("13. Số lượng bê cái nuoi thit BCT")
-    for result in results:
-        print(result)
-
-
-# 14	Tổng số bò cái hậu bị BCT 13-18 tháng
-def tongSo_boCaiHauBiChoPhoi(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"PhanLoaiBo": "BoHauBiChoPhoi"},
-                    {"GioiTinhBe": "Cái"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("14. Số lượng bò cái hậu bị 13-18 thang")
-    for result in results:
-        print(result)
-
-
-# 15	Tổng số bò đực hậu bị BCT 13-18 tháng
-def tongSo_boDucHauBi_13_18(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"PhanLoaiBo": "BoHauBiChoPhoi"},
-                    {"GioiTinhBe": "Đực"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("15. Số lượng bò đực hậu bị 13-18 thang")
-    for result in results:
-        print(result)
-
-
-# 16	Tổng số bò đực nuôi thịt BCT 13-18 tháng
-
-
-# 17	Tổng số bò cái nuôi thịt BCT 13-18 tháng
-
-
-# 18	Tổng số bò vỗ béo nhỏ
-def tongSo_boVoBeoNho(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoNho"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("18. Số lượng bo vo beo nho")
-    for result in results:
-        print(result)
-
-
-"""
-# 19	Tăng trọng bình quân của BVB nhỏ
-def tangTrongBinhQuan_boVoBeoNho(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoNho"},
-                ]
-            }
-        },
-        {"$lookup":{
-            "from":"CanBo",
-            "localField":"SoTai",
-            "foreignField":"SoTai",
-            "as":"lichsucan"
-        }},
-        {"$unwind":"$lichsucan"},
-
-        {
-            "$group": {
-                "_id": "SoTai",
-                "ngayCanDau":
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("18. Số lượng bo vo beo nho")
-    for result in results:
-        print(result)
-"""
-# 20	Tổng số bò vỗ béo trung
-def tongSo_boVoBeoTrung(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoTrung"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("20. Số lượng bo vo beo trung")
-    for result in results:
-        print(result)
-
-# 21	Tăng trọng bình quân của BVB trung
-# 22	Tổng số bò vỗ béo lớn
-def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": "BoChuyenVoBeo"},
-                    {"PhanLoaiBo": "BoVoBeoLon"},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-            }
-        },
-        {"$project": {"_id": 0, "soLuong": 1}},
-    ]
-    results = col.aggregate(pipeline)
-    print("22. Số lượng bo vo beo lon")
-    for result in results:
-        print(result)
-
-# 23	Tăng trọng bình quân của BVB lớn
-# 24	Tổng số bò sinh sản nhập trại
-# 25	Tổng số bê nhập trại
-# 26	Tổng số bê sinh ra
-# 27	Tổng số bê chết
-# 28	Tổng số bò giống xuất bán
-# 29	Tổng số bò vỗ béo xuất bán
-# 30	Tổng số bê bệnh đang chờ thanh lý
-# 31	Tổng số bò bệnh đang chờ thanh lý
-
-
-# Print danh sach dan
-def danhsachdan(client: MongoClient, dbName, collectionName, pageNumber, pageSize):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
-        {
-            "$match": {
-                "$or": [
-                    {"NhomBo": "Be"},
-                    {"NhomBo": "Bo"},
-                ]
-            }
-        },
-        {"$skip": (pageNumber - 1) * pageSize},
-        {"$limit": pageSize},
         {
             "$project": {
-                "SoTai": 1,
-                "SoChip": 1,
-                "GiongBo": 1,
-                "NgayNhap": 1,
-                "NgaySinh": 1,
-                "PhanLoaiBo": 1,
-                "TrongLuongNhap": 1,
-                "MauLong": 1,
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
             }
         },
     ]
     results = col.aggregate(pipeline)
-    print("10. Số lượng bê đực hậu bị")
+    reportName = "2.1 Tong so bo vo beo nho da va dang dieu tri"
+    print(reportName)
     for result in results:
         print(result)
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 2,2	Tổng số bò vỗ béo trung đã và đang điều trị
+def tongSo_boDaDangDieuTri_boVoBeoTrung(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoVoBeoTrung"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "2.2 Tong so bo vo beo trung da va dang dieu tri"
+    print(reportName)
+    for result in results:
+        print(result)
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 2,3	Tổng số bò vỗ béo lớn đã và đang điều trị
+def tongSo_boDaDangDieuTri_boVoBeoLon(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoVoBeoLon"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "2.3 Tong so bo vo beo lon da va dang dieu tri"
+    print(reportName)
+    for result in results:
+        print(result)
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 2,5	Tổng số bò vỗ béo đã điều trị Khỏi bệnh
+def tongSo_boKhoiBenh_boVoBeo(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoVoBeo}},
+                    {"TinhTrangDieuTri": "KhoiBenh"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "2.5 Tổng số bò vỗ béo đã điều trị Khỏi bệnh"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 2,6	Tổng số bò vỗ béo đã điều trị không khỏi bệnh
+def tongSo_boKhongKhoiBenh_boVoBeo(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoVoBeo}},
+                    {
+                        "TinhTrangDieuTri": {
+                            "$in": [
+                                "KhongKhoiBenh",
+                                "Chet",
+                                "ChamSocDacBiet",
+                                "ThanhLy",
+                            ]
+                        }
+                    },
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "2.6 Tổng số bò vỗ béo đã điều trị không khỏi bệnh"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 2,7	Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý
+def tongSo_boDaDeXuatThanhLy_boVoBeo(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoVoBeo}},
+                    {"HinhThucThanhLy": "DeXuatThanhLy"},
+                    {"NgayDeXuat": {"$gte": startDate, "$lte": endDate}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "2.7 Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# Tổng số bò sinh sản đã và đang điều trị
+# 3,1	Tổng số bò chờ phối đang điều trị
+def tongSo_boDaDangDieuTri_boChoPhoi(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoChoPhoi}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.1 Tổng số bò chờ phối đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,2	Tổng số bò mang thai 2-7 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boMangThaiNho(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoMangThaiNho"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.2 Tổng số bò mang thai 2-7 tháng đã và đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,3	Tổng số bò mang thai 8-9 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boMangThaiLon(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoMangThaiLon"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.3 Tổng số bò mang thai 8-9 tháng đã và đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,4	Tổng số bò nuôi con 0-1 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boNuoiConNho(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoMeNuoiConNho"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.4 Tổng số bò nuôi con 0-1 tháng đã và đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,5	Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boNuoiConLon(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoMeNuoiConLon"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.5 Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,6	Tổng số bò hậu bị  9-12 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boHauBi(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoHauBi"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.6 Tổng số bò hậu bị 9-12 tháng đã và đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,7	Tổng số bò hậu bị  13-18 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boHauBiChoPhoi(
+    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoHauBiChoPhoi"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "3.7 Tổng số bò hậu bị 13-18 tháng đã và đang điều trị"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
+# Tổng số bê đã và đang điều trị
+# 4,1	Tổng số bê từ 0-1 tháng đã và đang điều trị
+# 4,2	Tổng số bê từ ≥ 1-4 tháng đã và đang điều trị
+# 4,3	Tổng số bê từ cai sữa ≥ 4 tháng đến 8 tháng đã và đang điều trị
+# 4,4	Tổng số bê đã điều trị khỏi bệnh
+# 4,5	Tổng số bê đã điều trị không khỏi bệnh
+# 4,6	Tổng số bê mắc bệnh đã đề nghị bán thanh lý
+# Bệnh tật và tính thích nghi của từng giống bò
+
+
+# 5,1	Tổng số bê giống Brahman từ 0-1 tháng tuổi mắc bệnh
+def tongSo_boDaDangDieuTri_theoGiongBo(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    giongbo,
+    phanloai,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": phanloai}},
+                    {"Bo.GiongBo": giongbo},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = col.aggregate(pipeline)
+    reportName = "So luong bo " + giongbo + " ".join(phanloai) + " mac benh"
+    print(reportName)
+    for result in results:
+        print("   so luong:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+
+
+# 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh
+# 5,3	Tổng số bê cái giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
+# 5,4	Tổng số bê đực giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
+# 5,5	Tổng số bò cái giống Brahman từ 9-12 tháng tuổi mắc bệnh
+# 5,6	Tổng số bò đực giống Brahman từ 9-12 tháng tuổi mắc bệnh
+# 5,7	Tổng số bò cái giống Brahman từ 13-18 tháng tuổi mắc bệnh
+# 5,8	Tổng số bò đực giống Brahman từ 13-18 tháng tuổi mắc bệnh
+# 5,9	Tổng số bò giống Brahman chờ phối mắc bệnh
+# 5,10	Tổng số bò giống Brahman mang thai 2-7 tháng mắc bệnh
+# 5,11	Tổng số bò giống Brahman mang thai 8-9 tháng mắc bệnh
+# 5,12	Tổng số bò giống Brahmannuôi con 0-1 tháng mắc bệnh
+# 5,13	Tổng số bò giống Brahmannuôi con ≥ 2-4 tháng mắc bệnh
+# 5,14	Tổng số bò đực vỗ béo nhỏ giống brahman mắc bệnh
+# 5,15	Tổng số bò đực vỗ béo trung giống brahman mắc bệnh
+# 5,16	Tổng số bò đực vỗ béo lớn giống brahman mắc bệnh
+# 5,17	Tổng số bê giống Drougth master từ 0-1 tháng tuổi mắc bệnh
+# 5,18	Tổng số bê giống Drougth master từ ≥ 1-4 tháng tuổi mắc bệnh
+# 5,19	Tổng số bê cái giống Drougth master từ ≥4-8 tháng tuổi mắc bệnh
+# 5,20	Tổng số bê đực giống Drougth master từ ≥4-8 tháng tuổi mắc bệnh
+# 5,21	Tổng số bò cái giống Drougth master từ 9-12 tháng tuổi mắc bệnh
+# 5,22	Tổng số bò đực giống Drougth master từ 9-12 tháng tuổi mắc bệnh
+# 5,23	Tổng số bò cái giống Drougth master từ 13-18 tháng tuổi mắc bệnh
+# 5,24	Tổng số bò đực giống Drougth master từ 13-18 tháng tuổi mắc bệnh
+# 5,25	Tổng số bò giống Drougth master chờ phối mắc bệnh
+# 5,26	Tổng số bò giống Drougth master mang thai 2-7 tháng mắc bệnh
+# 5,27	Tổng số bò giống Drougth master mang thai 8-9 tháng mắc bệnh
+# 5,28	Tổng số bò giống Drougth master nuôi con 0-1 tháng mắc bệnh
+# 5,29	Tổng số bò giống Drougth master nuôi con ≥ 2-4 tháng mắc bệnh
+# 5,30	Tổng số bò đực vỗ béo nhỏ giống Drougth master mắc bệnh
+# 5,31	Tổng số bò đực vỗ béo trung giống Drougth master mắc bệnh
+# 5,32	Tổng số bò đực vỗ béo lớn giống Drougth master mắc bệnh
+# 5,33	Tổng số bê giống Angus từ 0-1 tháng tuổi mắc bệnh
+# 5,34	Tổng số bê giống Angus từ ≥ 1-4 tháng tuổi mắc bệnh
+# 5,35	Tổng số bê cái giống Angus từ ≥4-8 tháng tuổi mắc bệnh
+# 5,36	Tổng số bê đực giống Angus từ ≥4-8 tháng tuổi mắc bệnh
+# 5,37	Tổng số bò cái giống Angus từ 9-12 tháng tuổi mắc bệnh
+# 5,38	Tổng số bò đực giống Angus từ 9-12 tháng tuổi mắc bệnh
+# 5,39	Tổng số bò cái giống Angus từ 13-18 tháng tuổi mắc bệnh
+# 5,40	Tổng số bò đực giống Angus từ 13-18 tháng tuổi mắc bệnh
+# 5,41	Tổng số bò giống Angus chờ phối mắc bệnh
+# 5,42	Tổng số bò giống Angus mang thai 2-7 tháng mắc bệnh
+# 5,43	Tổng số bò giống Angus mang thai 8-9 tháng mắc bệnh
+# 5,44	Tổng số bò giống Angus nuôi con 0-1 tháng mắc bệnh
+# 5,45	Tổng số bò giống Angus nuôi con ≥ 2-4 tháng mắc bệnh
+# 5,46	Tổng số bò đực vỗ béo nhỏ giống Angus mắc bệnh
+# 5,47	Tổng số bò đực vỗ béo trung giống Angus mắc bệnh
+# 5,48	Tổng số bò đực vỗ béo lớn giống Angus mắc bệnh
+# 5,49	Tổng số bê giống Charolaire từ 0-1 tháng tuổi mắc bệnh
+# 5,50	Tổng số bê giống Charolaire từ ≥ 1-4 tháng tuổi mắc bệnh
+# 5,51	Tổng số bê cái giống Charolaire từ ≥4-8 tháng tuổi mắc bệnh
+# 5,52	Tổng số bê đực giống Charolaire từ ≥4-8 tháng tuổi mắc bệnh
+# 5,53	Tổng số bò cái giống Charolaire từ 9-12 tháng tuổi mắc bệnh
+# 5,54	Tổng số bò đực giống Charolaire từ 9-12 tháng tuổi mắc bệnh
+# 5,55	Tổng số bò cái giống Charolaire từ 13-18 tháng tuổi mắc bệnh
+# 5,56	Tổng số bò đực giống Charolaire từ 13-18 tháng tuổi mắc bệnh
+# 5,57	Tổng số bò giốngCharolaire chờ phối mắc bệnh
+# 5,58	Tổng số bò giống Charolaire mang thai 2-7 tháng mắc bệnh
+# 5,59	Tổng số bò giống Charolaire mang thai 8-9 tháng mắc bệnh
+# 5,60	Tổng số bò giống Charolaire nuôi con 0-1 tháng mắc bệnh
+# 5,61	Tổng số bò giống Charolaire nuôi con ≥ 2-4 tháng mắc bệnh
+# 5,62	Tổng số bò đực vỗ béo nhỏ giống Charolaire mắc bệnh
+# 5,63	Tổng số bò đực vỗ béo trung giống Charolaire mắc bệnh
+# 5,64	Tổng số bò đực vỗ béo lớn giống Charolaire mắc bệnh
+# 5,65	Tổng số bê giống BBB (Blan Blue Belgium) từ 0-1 tháng tuổi mắc bệnh
+# 5,66	Tổng số bê giống BBB (Blan Blue Belgium) từ ≥ 1-4 tháng tuổi mắc bệnh
+# 5,67	Tổng số bê cái giống BBB (Blan Blue Belgium) từ ≥4-8 tháng tuổi mắc bệnh
+# 5,68	Tổng số bê đực giống BBB (Blan Blue Belgium) từ ≥4-8 tháng tuổi mắc bệnh
+# 5,69	Tổng số bò cái giống BBB (Blan Blue Belgium) từ 9-12 tháng tuổi mắc bệnh
+# 5,70	Tổng số bò đực giống BBB (Blan Blue Belgium) từ 9-12 tháng tuổi mắc bệnh
+# 5,71	Tổng số bò cái giống BBB (Blan Blue Belgium) từ 13-18 tháng tuổi mắc bệnh
+# 5,72	Tổng số bò đực giống BBB (Blan Blue Belgium) từ 13-18 tháng tuổi mắc bệnh
+# 5,73	Tổng số bò giống BBB (Blan Blue Belgium) chờ phối mắc bệnh
+# 5,74	Tổng số bò giống BBB (Blan Blue Belgium) mang thai 2-7 tháng mắc bệnh
+# 5,75	Tổng số bò giống BBB (Blan Blue Belgium) mang thai 8-9 tháng mắc bệnh
+# 5,76	Tổng số bò giống BBB (Blan Blue Belgium) nuôi con 0-1 tháng mắc bệnh
+# 5,77	Tổng số bò giống BBB (Blan Blue Belgium) nuôi con ≥ 2-4 tháng mắc bệnh
+# 5,78	Tổng số bò đực vỗ béo nhỏ giống BBB (Blan Blue Belgium) mắc bệnh
+# 5,79	Tổng số bò đực vỗ béo trung giống BBB (Blan Blue Belgium) mắc bệnh
+# 5,80	Tổng số bò đực vỗ béo lớn giống BBB (Blan Blue Belgium) mắc bệnh

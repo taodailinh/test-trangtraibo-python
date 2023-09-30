@@ -10,6 +10,11 @@ giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
 
 giaiDoanBoChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
 
+tatCaNhomBo = {
+    "tennhom": "bò",
+    "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be", None],
+}
+
 
 # 1,1	Tổng số bò đã điều trị khỏi bệnh
 def tongSo_boKhoiBenh(client: MongoClient, dbName, collectionName, startdate, enddate):
@@ -862,7 +867,10 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
     enddate,
     excelWriter,
     giongbo,
-    phanloai,
+    nhomphanloai,
+    gioitinh,
+    stt,
+    nhombo=tatCaNhomBo,
 ):
     db = client[dbName]
     col = db[collectionName]
@@ -874,8 +882,10 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
                     {"NgayBatDauDieuTri": {"$lte": endDate}},
-                    {"Bo.PhanLoaiBo": {"$in": phanloai}},
+                    {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
+                    {"Bo.PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
                     {"Bo.GiongBo": giongbo},
+                    {"Bo.GioiTinhBe": {"$in": gioitinh}},
                 ]
             }
         },
@@ -906,16 +916,30 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
             }
         },
     ]
+    gioiTinhRaw = ["" if x is None else x for x in gioitinh]
+    gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     results = col.aggregate(pipeline)
-    reportName = "So luong bo " + giongbo + " ".join(phanloai) + " mac benh"
+    reportName = (
+        stt
+        + " số lượng "
+        + nhombo["tennhom"]
+        + " "
+        + giongbo
+        + " - "
+        + (nhomphanloai["tennhom"])
+        + " "
+        + gioiTinhLoaiNullJoined
+        + " - mắc bệnh"
+    )
     print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
+        print("   Số lượng:" + str(result["soLuong"]))
         row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
         excelWriter.append(row)
 
 
 # 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh
+
 # 5,3	Tổng số bê cái giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
 # 5,4	Tổng số bê đực giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
 # 5,5	Tổng số bò cái giống Brahman từ 9-12 tháng tuổi mắc bệnh

@@ -227,23 +227,136 @@ thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(
 # 4,5	Tổng số bê đã điều trị không khỏi bệnh
 # 4,6	Tổng số bê mắc bệnh đã đề nghị bán thanh lý
 # Bệnh tật và tính thích nghi của từng giống bò
-beDuoi1thang = ["BeSinh"]
-boChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
+
+# Danh sách phân loại bò
+beDuoi1thang = {"tennhom": "bê dưới 1 tháng", "danhsach": ["BeSinh"]}
+beTheoMe = {"tennhom": "bê theo mẹ 1-4 tháng", "danhsach": ["BeTheoMe"]}
+beCaiSua = {"tennhom": "bê theo mẹ 1-4 tháng", "danhsach": ["BeCaiSua"]}
+boHauBi = {"tennhom": "bò hậu bị 9-12 tháng", "danhsach": ["BoHauBi"]}
+boHauBiChoPhoi = {"tennhom": "bò hậu bị 13-18 tháng", "danhsach": ["BoHauBiChoPhoi"]}
+boNuoiThitBCT = {"tennhom": "bò nuôi thịt BCT 9-12 tháng", "danhsach": ["BoNuoiThitBCT"]}
+boChoPhoi = {"tennhom": "bò chờ phối", "danhsach": ["BoChoPhoi", "BoHauBiChoPhoi"]}
+
+# Danh sách nhóm bò
+boDucGiong = {"tennhom": "bò đực giống", "danhsach": ["BoDucGiong"]}
+tatCaNhomBo = {"tennhom": "bò", "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be"]}
+
+gioiTinh = {
+    "duc": ["Đực"],
+    "cai": ["Cái"],
+    "khongxacdinh": ["Không xác định"],
+    "all": ["Đực", "Cái", "Không xác định", None, ""],
+}
 # 5,1	Tổng số bê giống Brahman từ 0-1 tháng tuổi mắc bệnh
 thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws, "Red  Brahman", beDuoi1thang
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    beDuoi1thang,
+    gioiTinh["all"],
+    "5.1",
 )
 # 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh
+thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    beTheoMe,
+    gioiTinh["all"],
+    "5.2",
+)
+
 # 5,3	Tổng số bê cái giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
+thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    beCaiSua,
+    gioiTinh["cai"],
+    "5.3",
+)
+
 # 5,4	Tổng số bê đực giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
+thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    beCaiSua,
+    gioiTinh["duc"],
+    "5.4",
+)
 # 5,5	Tổng số bò cái giống Brahman từ 9-12 tháng tuổi mắc bệnh
+thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    beCaiSua,
+    gioiTinh["cai"],
+    "5.5",
+)
 # 5,6	Tổng số bò đực giống Brahman từ 9-12 tháng tuổi mắc bệnh
+thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    boNuoiThitBCT,
+    gioiTinh["duc"],
+    "5.6",
+)
+
 # 5,7	Tổng số bò cái giống Brahman từ 13-18 tháng tuổi mắc bệnh
+thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    boHauBiChoPhoi,
+    gioiTinh["cai"],
+    "5.7",
+)
+
 # 5,8	Tổng số bò đực giống Brahman từ 13-18 tháng tuổi mắc bệnh
 # 5,9	Tổng số bò giống Brahman chờ phối mắc bệnh
 thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws, "Red  Brahman", boChoPhoi
+    client,
+    db,
+    "DieuTriBoBenh",
+    startDate,
+    endDate,
+    ws,
+    "Brahman",
+    boChoPhoi,
+    gioiTinh["all"],
+    "5.9",
 )
+
 # 5,10	Tổng số bò giống Brahman mang thai 2-7 tháng mắc bệnh
 # 5,11	Tổng số bò giống Brahman mang thai 8-9 tháng mắc bệnh
 # 5,12	Tổng số bò giống Brahmannuôi con 0-1 tháng mắc bệnh

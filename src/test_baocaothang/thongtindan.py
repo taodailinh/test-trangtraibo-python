@@ -975,7 +975,7 @@ def exportThongTinDan(client: MongoClient, dbName, collectionName):
         "BoVoBeoNho": "Bò vỗ béo nhỏ",
         "BoHauBiChoPhoi": "Bò hậu bị chờ phối",
         "BoNuoiThitBCT": "Bò nuôi thịt BCT",
-        "BoHauBi": "Bò hậu bị chờ phối",
+        "BoHauBi": "Bò hậu bị",
         "BoNuoiThitBCT8_12": "Bò nuôi thịt BCT 8-12 tháng",
         "BeCaiSua": "Bê cai sữa",
         "BeTheoMe": "Bê theo mẹ",

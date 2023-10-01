@@ -15,6 +15,11 @@ tatCaNhomBo = {
     "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be", None],
 }
 
+gioiTinhTatCa = {
+    "tennhom": "",
+    "danhsach": ["Đực", "Cái", "Không xác định", None, ""],
+}
+
 
 # 1,1	Tổng số bò đã điều trị khỏi bệnh
 def tongSo_boKhoiBenh(client: MongoClient, dbName, collectionName, startdate, enddate):
@@ -868,8 +873,7 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
     excelWriter,
     giongbo,
     nhomphanloai,
-    gioitinh,
-    stt,
+    gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
     db = client[dbName]
@@ -885,7 +889,7 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
                     {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
                     {"Bo.PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
                     {"Bo.GiongBo": giongbo},
-                    {"Bo.GioiTinhBe": {"$in": gioitinh}},
+                    {"Bo.GioiTinhBe": {"$in": gioitinh["danhsach"]}},
                 ]
             }
         },
@@ -916,19 +920,17 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
             }
         },
     ]
-    gioiTinhRaw = ["" if x is None else x for x in gioitinh]
-    gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     results = col.aggregate(pipeline)
     reportName = (
-        stt
-        + " số lượng "
+        "Số lượng "
         + nhombo["tennhom"]
         + " "
         + giongbo
         + " - "
         + (nhomphanloai["tennhom"])
-        + " "
-        + gioiTinhLoaiNullJoined
+        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
         + " - mắc bệnh"
     )
     print(reportName)

@@ -524,7 +524,7 @@ def tongSo_XLSS(
 # 6	Tổng số bò được xử lý hormone sinh sản 10
 
 # 7	Tổng số bò được gieo tinh nhân tạo từ bò lên giống tự nhiên (không xử lý sinh sản)
-def tongSo_phoiGiongTuNhien(
+def tongSo_phoiGiongTuNhien_ver1(
     client: MongoClient,
     dbName,
     collectionName,
@@ -756,6 +756,88 @@ def tongSo_phoiGiongTuNhien_ver3(
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
+def tongSo_phoiGiongTuNhien(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    nghiepVu,
+    startdate,
+    enddate,
+    excelWriter,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    khungChenhLech = 3*24*60*60*1000
+    khungChenhLechBanDau = (3*24*60*60*1000)*(-1)
+    pipeline = [
+        {"$match":{"NgayPhoi":{"$gte": startDate, "$lte": endDate}}},
+        {"$sort":{"Bo.SoTai":1}},
+        {"$lookup":{
+            "from":"XuLySinhSan",
+            "localField":"Bo.SoTai",
+            "foreignField":"Bo.SoTai",
+            "let":{"soTai":"$Bo.SoTai","ngayPhoi":"$NgayPhoi"},
+            "pipeline":[
+                {"$match":{"$expr":{"$gt":[{"$subtract":[{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]},startDate]},khungChenhLechBanDau]}},},
+                {"$match":{"$expr":{"$lt":[{"$subtract":["$$ngayPhoi",{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]}]},khungChenhLech]}},},
+            ],
+            "as":"phoigiongxuly"
+        }},
+        {"$match":{"$expr":{"$eq":[{"$size":"$phoigiongxuly"},0]}}},
+        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
+        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
+    #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Số lượng "
+        + nhombo["tennhom"]
+        + " "
+        + " - "
+        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+        + (" " + nghiepVu)
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+    finishTime = time.time()
+    print("tong thoi gian: " + str(finishTime - startTime))
+
 
 #work and fast
 def tongSo_phoiGiongSauXLSS(
@@ -841,7 +923,12 @@ def tongSo_phoiGiongSauXLSS(
     print("tong thoi gian: " + str(finishTime - startTime))
 
 
-def tongSo_phoiGiongTuNhien_ver4(
+
+
+# 8	Tổng số bò được ghép đôi phối giống với bò đực giống
+# 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
+# 10	Tổng số bò xử lý sinh sản có thai
+def tongSo_coThai_sauXLSS(
     client: MongoClient,
     dbName,
     collectionName,
@@ -856,23 +943,24 @@ def tongSo_phoiGiongTuNhien_ver4(
     col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
-    khungChenhLech = 3*24*60*60*1000
-    khungChenhLechBanDau = (3*24*60*60*1000)*(-1)
+    khungChenhLech = 90*24*60*60*1000
+    khungChenhLechBanDau = (90*24*60*60*1000)*(-1)
     pipeline = [
-        {"$match":{"NgayPhoi":{"$gte": startDate, "$lte": endDate}}},
+        {"$match":{"NgayKham":{"$gte": startDate, "$lte": endDate}}},
+        {"$match":{"CoThai":True}},
         {"$sort":{"Bo.SoTai":1}},
         {"$lookup":{
             "from":"XuLySinhSan",
             "localField":"Bo.SoTai",
             "foreignField":"Bo.SoTai",
-            "let":{"soTai":"$Bo.SoTai","ngayPhoi":"$NgayPhoi"},
+            "let":{"soTai":"$Bo.SoTai","ngayKham":"$NgayKham"},
             "pipeline":[
                 {"$match":{"$expr":{"$gt":[{"$subtract":[{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]},startDate]},khungChenhLechBanDau]}},},
-                {"$match":{"$expr":{"$lt":[{"$subtract":["$$ngayPhoi",{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]}]},khungChenhLech]}},},
+                {"$match":{"$expr":{"$lt":[{"$subtract":["$$ngayKham",{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]}]},khungChenhLech]}},},
             ],
-            "as":"phoigiongxuly"
+            "as":"cothaisauxuly"
         }},
-        {"$match":{"$expr":{"$eq":[{"$size":"$phoigiongxuly"},0]}}},
+        {"$match":{"$expr":{"$ne":[{"$size":"$cothaisauxuly"},0]}}},
         # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
         # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
     #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
@@ -923,11 +1011,189 @@ def tongSo_phoiGiongTuNhien_ver4(
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
-# 8	Tổng số bò được ghép đôi phối giống với bò đực giống
-# 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
-# 10	Tổng số bò xử lý sinh sản có thai
 # 11	Tổng số bò xử lý sinh sản không có thai
+def tongSo_khongThai_sauXLSS(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    nghiepVu,
+    startdate,
+    enddate,
+    excelWriter,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    khungChenhLech = 90*24*60*60*1000
+    khungChenhLechBanDau = (90*24*60*60*1000)*(-1)
+    pipeline = [
+        {"$match":{"NgayKham":{"$gte": startDate, "$lte": endDate}}},
+        {"$match":{"CoThai":False}},
+        {"$sort":{"Bo.SoTai":1}},
+        {"$lookup":{
+            "from":"XuLySinhSan",
+            "localField":"Bo.SoTai",
+            "foreignField":"Bo.SoTai",
+            "let":{"soTai":"$Bo.SoTai","ngayKham":"$NgayKham"},
+            "pipeline":[
+                {"$match":{"$expr":{"$gt":[{"$subtract":[{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]},startDate]},khungChenhLechBanDau]}},},
+                {"$match":{"$expr":{"$lt":[{"$subtract":["$$ngayKham",{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]}]},khungChenhLech]}},},
+            ],
+            "as":"cothaisauxuly"
+        }},
+        {"$match":{"$expr":{"$ne":[{"$size":"$cothaisauxuly"},0]}}},
+        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
+        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
+    #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Số lượng "
+        + nhombo["tennhom"]
+        + " "
+        + " - "
+        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+        + (" " + nghiepVu)
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+    finishTime = time.time()
+    print("tong thoi gian: " + str(finishTime - startTime))
+
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
+def tongSo_coThai_sauPhoi_tuNhien(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    nghiepVu,
+    startdate,
+    enddate,
+    excelWriter,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    khungChenhLech = 90*24*60*60*1000
+    khungChenhLechPhoiXL = 3*24*60*60*1000
+    khungChenhLechBanDau = (90*24*60*60*1000)*(-1)
+    pipeline = [
+        {"$match":{"NgayKham":{"$gte": startDate, "$lte": endDate}}},
+        {"$match":{"CoThai":True}},
+        {"$lookup":{
+            "from":"ThongTinPhoiGiong",
+            "localField":"Bo.SoTai",
+            "foreignField":"Bo.SoTai",
+            "let":{"ngayKham":"$NgayKham"},
+            "pipeline":[
+            # {"$sort":{"Bo.SoTai":1}},
+            {"$match":{"$expr":{"$gt":[{"$subtract":["$NgayPhoi",startDate]},khungChenhLechBanDau]}},},
+            {"$match":{"$expr":{"$lt":[{"$subtract":["$$ngayKham","$NgayPhoi"]},khungChenhLech]}},},
+            {"$sort":{"NgayPhoi":-1}}
+            ],
+            "as":"phoigiong"
+        }},
+        {"$match":{"$expr":{"$ne":[{"$size":"$phoigiong"},0]}}},
+        {"$lookup":{
+            "from":"XuLySinhSan",
+            "localField":"Bo.SoTai",
+            "foreignField":"Bo.SoTai",
+            "let":{"ngayPhoiCuoi":{"$arrayElemAt":["$phoigiong.NgayPhoi",0]}},
+            "pipeline":[
+                # {"$project":{"Bo.SoTai":1,"LieuTrinhApDungs":1}},
+                {"$match":{"$expr":{"$gt":[{"$subtract":[{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]},startDate]},khungChenhLechBanDau]}},},
+                {"$match":{"$expr":{"$lt":[{"$subtract":["$$ngayPhoiCuoi",{"$arrayElemAt":["$LieuTrinhApDungs.NgayThucHien",0]}]},khungChenhLechPhoiXL]}},},
+            ],
+            "as":"xulysinhsan"
+        }},
+        {"$match":{"$expr":{"$eq":[{"$size":"$xulysinhsan"},0]}}},
+        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
+        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
+    #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Số lượng "
+        + nhombo["tennhom"]
+        + " "
+        + " - "
+        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+        + (" " + nghiepVu)
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+    finishTime = time.time()
+    print("tong thoi gian: " + str(finishTime - startTime))
+
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
 # 14	Tổng số bò ghép đực được khám thai
 # 15	Tổng số bò ghép đực có thai

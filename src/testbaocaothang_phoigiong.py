@@ -106,22 +106,31 @@ phoiGiong.tongSo_XLSS(client,db,"XuLySinhSan","xử lý sinh sản ngày 9",star
 phoiGiong.tongSo_XLSS(client,db,"XuLySinhSan","xử lý sinh sản ngày 10",startDate,endDate,ws,"10")
 
 # 7	Tổng số bò được gieo tinh nhân tạo từ bò lên giống tự nhiên (không xử lý sinh sản)
-# phoiGiong.tongSo_phoiGiongTuNhien(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
+phoiGiong.tongSo_phoiGiongTuNhien(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
 # phoiGiong.tongSo_phoiGiongTuNhien_ver2(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
 # phoiGiong.tongSo_phoiGiongTuNhien_ver3(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
-phoiGiong.tongSo_phoiGiongTuNhien_ver4(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
-
 phoiGiong.tongSo_phoiGiongSauXLSS(client,db,"ThongTinPhoiGiong","phối giống sau khi xlss",startDate,endDate,ws)
 
 
 # 8	Tổng số bò được ghép đôi phối giống với bò đực giống
+phoiGiong.nghiepVu_tongSoBo(client,db,"ThongTinPhoiGiong","về đực không qua phối",startDate,endDate,ws,tatCaPhanLoai,"NgayGhepDuc","GhepDucKhongQuaPhoi",True)
+
+phoiGiong.nghiepVu_tongSoBo(client,db,"ThongTinPhoiGiong","về đực sau phối",startDate,endDate,ws,tatCaPhanLoai,"NgayGhepDuc","GhepDuc",True)
+
 # 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
 # 10	Tổng số bò xử lý sinh sản có thai
+phoiGiong.tongSo_coThai_sauXLSS(client,db,"KhamThai","có thai có xlss",startDate,endDate,ws)
+
 # 11	Tổng số bò xử lý sinh sản không có thai
+phoiGiong.tongSo_khongThai_sauXLSS(client,db,"KhamThai","không thai có xlss",startDate,endDate,ws)
+
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
+phoiGiong.tongSo_coThai_sauPhoi_tuNhien(client,db,"KhamThai","lên giống tự nhiên được gieo tinh nhân tạo có thai",startDate,endDate,ws)
+
+
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
 # 14	Tổng số bò ghép đực được khám thai
 # 15	Tổng số bò ghép đực có thai

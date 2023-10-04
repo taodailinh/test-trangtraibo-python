@@ -5,6 +5,21 @@ from openpyxl import Workbook
 
 date_format = "%Y-%m-%d"
 
+giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
+
+giaiDoanBoChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
+
+tatCaNhomBo = {
+    "tennhom": "bò",
+    "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be", None],
+}
+
+gioiTinhTatCa = {
+    "tennhom": "",
+    "danhsach": ["Đực", "Cái", "Không xác định", None, ""],
+}
+
+
 # Kết nối db
 # client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
 # db = client["quanlytrangtrai_0910"]
@@ -569,8 +584,8 @@ def tongSo_boDucHauBi_13_18(client: MongoClient, dbName, collectionName):
         {
             "$match": {
                 "$and": [
-                    {"NhomBo": {"$in": ["Be", "Bo"]}},
-                    {"PhanLoaiBo": "BoHauBiChoPhoi"},
+                    {"NhomBo": {"$in": ["Be", "Bo", "BoDucGiong", "BoChuyenVoBeo"]}},
+                    {"PhanLoaiBo": "BoNuoiThitBCT"},
                     {"GioiTinhBe": "Đực"},
                 ]
             }
@@ -893,7 +908,6 @@ def tongSo_chet_be(client: MongoClient, dbName, collectionName, startdate, endda
 # 31	Tổng số bò bệnh đang chờ thanh lý
 
 
-
 # Print danh sach dan
 def danhsachdan(client: MongoClient, dbName, collectionName, pageNumber, pageSize):
     db = client[dbName]
@@ -926,6 +940,76 @@ def danhsachdan(client: MongoClient, dbName, collectionName, pageNumber, pageSiz
     print("10. Số lượng bê đực hậu bị")
     for result in results:
         print(result)
+
+
+def tongSoBo(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    nhomphanloai,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NhomBo": {"$in": nhombo["danhsach"]}},
+                    {"PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
+                    {"GioiTinhBe": {"$in": gioitinh["danhsach"]}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soLuong": {"$count": {}},
+                "danhsachsotai": {"$push": "SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Số lượng "
+        + nhombo["tennhom"]
+        + " "
+        + " - "
+        + (nhomphanloai["tennhom"])
+        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
 
 
 # export thong tin dan
@@ -974,9 +1058,9 @@ def exportThongTinDan(client: MongoClient, dbName, collectionName):
         "BoMeNuoiConLon": "Bò mẹ nuôi con lớn",
         "BoVoBeoNho": "Bò vỗ béo nhỏ",
         "BoHauBiChoPhoi": "Bò hậu bị chờ phối",
-        "BoNuoiThitBCT": "Bò nuôi thịt BCT",
+        "BoNuoiThitBCT": "Bò nuôi thịt BCT 13-18 tháng",
         "BoHauBi": "Bò hậu bị",
-        "BoNuoiThitBCT8_12": "Bò nuôi thịt BCT 8-12 tháng",
+        "BoNuoiThitBCT8_12": "Bò nuôi thịt BCT 9-12 tháng",
         "BeCaiSua": "Bê cai sữa",
         "BeTheoMe": "Bê theo mẹ",
         "BeSinh": "Bê sinh",

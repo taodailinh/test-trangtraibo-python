@@ -85,6 +85,11 @@ giongBo = [
     "BBB (Blan Blue Belgium)",
 ]
 
+lanPhoi1 = {"min":1,"max":1}
+lanPhoi2 = {"min":2,"max":2}
+lanPhoi3 = {"min":3,"max":999}
+
+"""
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 phoiGiong.tongSoBoThanhLy_BoDucGiong(
     client, db, "ThanhLyBo", "thanh lý", startDate, endDate, ws, boDucGiong
@@ -132,16 +137,39 @@ phoiGiong.tongSo_coThai_sauPhoi_tuNhien(client,db,"KhamThai","lên giống tự 
 
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
+phoiGiong.tongSo_khongThai_sauPhoi_tuNhien(client,db,"KhamThai","lên giống tự nhiên được gieo tinh nhân tạo không thai",startDate,endDate,ws)
+
 # 14	Tổng số bò ghép đực được khám thai
+phoiGiong.tongSo_duocKhamThai_sauGhepDuc(client,db,"KhamThai","được khám thai sau khi ghép đực",startDate,endDate,ws)
+
+
 # 15	Tổng số bò ghép đực có thai
+phoiGiong.tongSo_coThai_sauGhepDuc(client,db,"KhamThai","có thai sau khi ghép đực",startDate,endDate,ws)
+
 # 16	Tổng số bò ghép đực không có thai
+phoiGiong.tongSo_khongThai_sauGhepDuc(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws)
+
 # 17	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 1
+phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi1)
+
 # 18	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 2
+phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi2)
+
 # 19	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 3
+phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi3)
+"""
+for bo in giongBo:
 # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 1
+    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi1,bo)
 # 21	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 2
+    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi2,bo)
+
 # 22	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 3
+    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi3,bo)
+
 # 23	Tỷ lệ đậu thai do ghép đực của giống bò Brahman
+    phoiGiong.tyLe_DauThai_ghepDuc_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,bo)
+
 # 24	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 1
 # 25	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 2
 # 26	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 3

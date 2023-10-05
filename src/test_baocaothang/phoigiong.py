@@ -2091,7 +2091,152 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
 # 38	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò BBB lần 3:
 # 39	Tỷ lệ đậu thai do ghép đực của giống bò BBB :
 
+def tuoiPhoiGiongLanDau_theoGiongBo(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    giongbo,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {"$match":{"NgayPhoi":{"$gte": startDate, "$lte": endDate}}},
+        {"$match":{"$expr":{"$ne":["$Bo.NgaySinh",None]}}},
+        {"$match":{"Bo.LanPhoi":1}},
+        {"$match":{"Bo.LuaDe":0}},
+        {"$lookup":{
+            "from":"BoNhapTrai",
+            "localField":"Bo.SoTai",
+            "foreignField":"SoTai",
+            "as":"phoigiong"
+        }},
+        {"$match":{"$phoigiong.0.GiongBo":giongbo}},
+        {
+            "$group": {
+                "_id": None,
+                "soLuong": {"$count": {}},
+                "ngaytuoitrungbinh":{"$avg":"$chenhlech"},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "chenhlech":1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Ngày tuổi bình quân của lần phối đầu của giống bò"+" "+giongbo
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        row = [reportName, result["chenhlech"], result["danhsachsotaijoined"]]
+        print(str(result["chenhlech"])/(60*60*1000))
+        excelWriter.append(row)
+    finishTime = time.time()
+    print("tong thoi gian: " + str(finishTime - startTime))
 
+def tuoiPhoiGiongLanDau_theoGiongBo_ver1(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    giongbo,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {"$match":{"NgayPhoi":{"$gte": startDate, "$lte": endDate}}},
+        {"$match":{"$expr":{"$eq":["$LanPhoi",1]}}},
+        {"$match":{"Bo.LuaDe":0}},
+        {"$lookup":{
+            "from":"BoNhapTrai",
+            "localField":"Bo.SoTai",
+            "foreignField":"SoTai",
+            "as":"phoigiong"
+        }},
+        {"$match":{"phoigiong.0.GiongBo":giongbo}},
+        {"$match":{"$expr":{"$ne":["$phoigiong.0.NgaySinh",None]}}},
+        {"$project":{"Bo.SoTai":1,"chenhlech":{"$subtract":["$NgayPhoi",{"$arrayElemAt":["$phoigiong.NgaySinh",0]}]}}},
+        {
+            "$group": {
+                "_id": None,
+                "soLuong": {"$count": {}},
+                "ngaytuoitrungbinh":{"$avg":"$chenhlech"},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "ngaytuoitrungbinh":1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Ngày tuổi bình quân của lần phối đầu của giống bò "+giongbo
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+        if result["ngaytuoitrungbinh"] != None:
+            print(str(result["ngaytuoitrungbinh"]/(24*60*60*1000)))
+            print(result["danhsachsotaijoined"])
+    finishTime = time.time()
+    print("tong thoi gian: " + str(finishTime - startTime))    
 
 # 40	Tuổi phối giống lần đầu của giống bò Brahman
 # 41	Tuổi phối giống lần đầu của giống bò Drougth master

@@ -90,6 +90,8 @@ lanPhoi2 = {"min":2,"max":2}
 lanPhoi3 = {"min":3,"max":999}
 
 """
+"""
+
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 phoiGiong.tongSoBoThanhLy_BoDucGiong(
     client, db, "ThanhLyBo", "thanh lý", startDate, endDate, ws, boDucGiong
@@ -157,7 +159,6 @@ phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi gh�
 
 # 19	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 3
 phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi3)
-"""
 for bo in giongBo:
 # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 1
     phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi1,bo)
@@ -169,6 +170,9 @@ for bo in giongBo:
 
 # 23	Tỷ lệ đậu thai do ghép đực của giống bò Brahman
     phoiGiong.tyLe_DauThai_ghepDuc_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,bo)
+
+    phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo_ver1(client,db,"ThongTinPhoiGiong",startDate,endDate,ws,bo,)
+
 
 # 24	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 1
 # 25	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 2
@@ -187,6 +191,8 @@ for bo in giongBo:
 # 38	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò BBB lần 3:
 # 39	Tỷ lệ đậu thai do ghép đực của giống bò BBB :
 # 40	Tuổi phối giống lần đầu của giống bò Brahman
+# phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo(client,db,"ThongTinPhoiGiong",startDate,endDate,ws,"Brahman",)
+
 # 41	Tuổi phối giống lần đầu của giống bò Drougth master
 # 42	Tuổi phối giống lần đầu của giống bò Angus
 # 43	Tuổi phối giống lần đầu của giống bò Charolaire

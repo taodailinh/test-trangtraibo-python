@@ -19,6 +19,25 @@ gioiTinhTatCa = {
     "danhsach": ["Đực", "Cái", "Không xác định", None, ""],
 }
 
+tatCaPhanLoai = {"tennhom":"","danhsach":["BoMoiPhoi",
+        "BoMangThaiNho",
+        "BoChoPhoi",
+        "BoXuLySinhSan",
+        "BoMeNuoiConNho",
+        "BoChoDe",
+        "BoMangThaiLon",
+        "BoMeNuoiConLon",
+        "BoVoBeoNho",
+        "BoHauBiChoPhoi",
+        "BoNuoiThitBCT",
+        "BoHauBi",
+        "BoNuoiThitBCT8_12",
+        "BeCaiSua",
+        "BeTheoMe",
+        "BeSinh",
+        "BoCachLy",
+        "",
+]}
 
 # Kết nối db
 # client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
@@ -949,7 +968,7 @@ def tongSoBo(
     startdate,
     enddate,
     excelWriter,
-    nhomphanloai,
+    nhomphanloai=tatCaPhanLoai,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):

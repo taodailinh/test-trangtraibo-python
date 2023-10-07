@@ -2244,6 +2244,92 @@ def tuoiPhoiGiongLanDau_theoGiongBo_ver1(
 # 43	Tuổi phối giống lần đầu của giống bò Charolaire
 # 44	Tuổi phối giống lần đầu của giống bò BBB
 
+# Test khoảng cách giữa 2 lứa đẻ bình quân
+def khoangCachGiua2LuaDe(
+    client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    giongbo,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {"$match":{"$expr":{"$and":[{"$ne":["$LuaDe",None]},{"$gt":["$LuaDe",1]},{"GiongBo":giongbo}]}}},
+        # {"$match":{"$expr":{"$gt":["$LuaDe",1]}}},
+        # {"$match":{"GiongBo":giongbo}},
+        {"$unwind":"$ThongTinSinhSans"},
+        {
+        "$sort": {"ThongTinSinhSans.NgaySinh": -1},
+        },
+        {
+        "$group": {
+            "_id": "$SoTai",
+            "luadecuoi": {"$first": "$ThongTinSinhSans.NgaySinh"},
+            "luadedau": {"$last": "$ThongTinSinhSans.NgaySinh"},
+            "LuaDe": {"$first": "$LuaDe"},
+        }
+        },
+        {"$project":{
+            "_id":1,
+            "chenhlech":{"$subtract":["$luadecuoi","$luadedau"]},
+            "sokyde":{"$subtract":["$LuaDe",1]},
+        }},
+        {"$project":{
+            "_id":1,
+            "khoangcachluadebinhquan":{"$divide":["$chenhlech","$sokyde"]},
+        }},
+        {
+            "$group": {
+                "_id": None,
+                "soLuong": {"$count": {}},
+                "songaydebinhquan":{"$avg":"$khoangcachluadebinhquan"},
+                "danhsachsotai": {"$push": "$_id"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soLuong": 1,
+                "songaydebinhquan":1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = col.aggregate(pipeline)
+    reportName = (
+        "Chênh lệch bình quân giữa 2 lứa đẻ giống bò "+giongbo
+    )
+    print(reportName)
+    for result in results:
+        print("   Số lượng:" + str(result["soLuong"]))
+        print("   Chênh lệch ngày đẻ bình quân giữa các lứa đẻ:" + str(result["songaydebinhquan"]))
+        row = [reportName, result["songaydebinhquan"], result["danhsachsotaijoined"]]
+        excelWriter.append(row)
+    finishTime = time.time()
+    print("tong thoi gian: " + str(finishTime - startTime))    
+
 # 45	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Brahman
 # 46	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Drougth master
 # 47	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Angus

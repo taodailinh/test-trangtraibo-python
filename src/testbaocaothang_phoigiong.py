@@ -90,7 +90,6 @@ lanPhoi2 = {"min":2,"max":2}
 lanPhoi3 = {"min":3,"max":999}
 
 """
-"""
 
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 phoiGiong.tongSoBoThanhLy_BoDucGiong(
@@ -192,18 +191,22 @@ for bo in giongBo:
 # 39	Tỷ lệ đậu thai do ghép đực của giống bò BBB :
 # 40	Tuổi phối giống lần đầu của giống bò Brahman
 # phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo(client,db,"ThongTinPhoiGiong",startDate,endDate,ws,"Brahman",)
+"""
 
 # 41	Tuổi phối giống lần đầu của giống bò Drougth master
 # 42	Tuổi phối giống lần đầu của giống bò Angus
 # 43	Tuổi phối giống lần đầu của giống bò Charolaire
 # 44	Tuổi phối giống lần đầu của giống bò BBB
+
+
 # 45	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Brahman
+phoiGiong.khoangCachGiua2LuaDe(client,db,"BoNhapTrai",startDate,endDate,ws,"Brahman")
 # 46	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Drougth master
 # 47	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Angus
 # 48	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Charolair
 # 49	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò BBB
 
-fileName = "baocaothang_" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
+fileName = "baocaothang_phoigiong" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 wb.save(fileName)
 
 # Close mongo connection

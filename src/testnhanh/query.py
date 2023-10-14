@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from datetime import datetime
 import time
 from openpyxl import Workbook
+import sys
 
 date_format = "%Y-%m-%d"
 
@@ -114,3 +115,97 @@ def tongSoBo_saiLuaDe(
         print("   Số lượng:" + str(result["soLuong"]))
         row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
         excelWriter.append(row)
+
+
+def danhsachbe(client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    nhomphanloai=tatCaPhanLoai,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NhomBo": {"$in": ["Bo","Be"]}},
+                ]
+            }
+        },
+        {
+            "$project": {
+                "SoTai":1,
+                "GiongBo":1,
+                "MauDa":1,
+                "TheHe":1,
+                "PhanLoaiBo":1,
+                "TrongLuongNhap":1,
+                "NhomBo":1
+        },
+        }
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    start = time.time()
+    results = list(col.aggregate(pipeline))
+    number =len(results)
+    print(str(number))
+    print(sys.getsizeof(results))
+    end = time.time()
+    totaltime = end-start
+    print(str(totaltime))
+    for result in results:
+        excelWriter.append([result["SoTai"],result["GiongBo"],result["PhanLoaiBo"],result["TrongLuongNhap"],result["TheHe"]])
+
+
+def tinh_tongsobobe(client: MongoClient,
+    dbName,
+    collectionName,
+    startdate,
+    enddate,
+    excelWriter,
+    nhomphanloai=tatCaPhanLoai,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    db = client[dbName]
+    col = db[collectionName]
+    # startDate = datetime.strptime(startdate, date_format)
+    # endDate = datetime.strptime(enddate, date_format)
+    # pipeline = [
+    #     {
+    #         "$match": {
+    #             "$and": [
+    #                 {"NhomBo": {"$in": nhombo["danhsach"]}},
+    #             ]
+    #         }
+    #     },
+    #     {
+    #         "$project": {
+    #             "SoTai":1,
+    #             "GiongBo":1,
+    #             "MauDa":1,
+    #             "TheHe":1,
+    #             "PhanLoaiBo":1,
+    #             "TrongLuongNhap":1,
+    #             "NhomBo":1
+    #     },
+    #     }
+    # ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    start = time.time()
+    results = col.count_documents({"NhomBo":{"$in":["Bo","Be"]}})
+    # number =len(results)
+    print(str(results))
+    print(sys.getsizeof(results))
+    end = time.time()
+    totaltime = end-start
+    print(str(totaltime))

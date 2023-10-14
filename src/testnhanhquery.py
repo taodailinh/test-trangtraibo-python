@@ -66,7 +66,8 @@ tatCaPhanLoai = {"tennhom": "", "danhsach": []}
 # Danh sách nhóm bò
 nhomBoDucGiong = {"tennhom": "bò đực giống", "danhsach": ["BoDucGiong"]}
 tatCaNhomBo = {"tennhom": "bò", "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be"]}
-nhomBe = {"tennhom": "bê", "danhsach": ["BoChuyenVoBeo", "Be"]}
+nhombovabe = {"tennhom": "bò và bê", "danhsach": ["Bo","Be"]}
+nhomBe = {"tennhom": "bê", "danhsach": ["Be"]}
 
 # Gioi tinh
 gioiTinhTatCa = {"tennhom": "", "danhsach": ["Đực", "Cái", "Không xác định", None, ""]}
@@ -87,8 +88,10 @@ lanPhoi3 = {"min":3,"max":999}
 
 """
 """
-query.tongSoBo_saiLuaDe(client,db,"BoNhapTrai",startDate,endDate,ws)
+# query.tongSoBo_saiLuaDe(client,db,"BoNhapTrai",startDate,endDate,ws)
 
+query.danhsachbe(client,db,"BoNhapTrai",startDate,endDate,ws,nhombo=nhombovabe)
+query.tinh_tongsobobe(client,db,"BoNhapTrai",startDate,endDate,ws)
 fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 wb.save(fileName)
 

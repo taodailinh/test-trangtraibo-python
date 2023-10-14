@@ -9,18 +9,62 @@ from selenium.webdriver.support.wait import WebDriverWait
 import time
 from datetime import datetime
 from selenium.webdriver import Keys, ActionChains
+from pymongo import MongoClient
+import test_dashboard.query as querydashboard
+import constants
+
 
 os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
 
+client = MongoClient(constants.CONNECTION_STRING)
+db = constants.DB
 
+tatCaNhomBo = {
+    "tennhom": "bò",
+    "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be", None],
+}
 
+tatCaNhomBoSong = {
+    "tennhom": "bò tổng đàn",
+    "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be"],
+}
 
+gioiTinhTatCa = {
+    "tennhom": "",
+    "danhsach": ["Đực", "Cái", "Không xác định", None, ""],
+}
+
+tatCaPhanLoai = {"tennhom":"","danhsach":["BoMoiPhoi",
+        "BoMangThaiNho",
+        "BoChoPhoi",
+        "BoXuLySinhSan",
+        "BoMeNuoiConNho",
+        "BoChoDe",
+        "BoMangThaiLon",
+        "BoMeNuoiConLon",
+        "BoVoBeoNho",
+        "BoHauBiChoPhoi",
+        "BoNuoiThitBCT",
+        "BoHauBi",
+        "BoNuoiThitBCT8_12",
+        "BeCaiSua",
+        "BeTheoMe",
+        "BeSinh",
+        "BoCachLy",
+        "",
+]}
+
+wb = Workbook()
+ws = wb.active
 
 # Tìm 1 con bò bằng sô tai và in số chip
 # for i in boNhapTrai.find({"SoTai": "F040923"}):
 #     print(i["SoChip"])
 
 
+querydashboard.tongdanbo(client,db,"BoNhapTrai",tatCaNhomBoSong,tatCaPhanLoai,ws)
+
+"""
 # Add this to keep webdriver stay running
 options = webdriver.ChromeOptions()
 options.add_experimental_option("detach", True)
@@ -50,13 +94,13 @@ driver.implicitly_wait(20)
 
 
 
-wb = Workbook()
 
 
 time.sleep(10)
 
 
 time.sleep(10)
+"""
 
 fileName = "test_dashboard" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 wb.save(fileName)

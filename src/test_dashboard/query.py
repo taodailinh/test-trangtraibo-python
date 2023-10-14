@@ -2,6 +2,40 @@ from pymongo import MongoClient
 from datetime import datetime
 import time
 
+def tongdanbo(client: MongoClient,databaseName, collectionName,nhombo,phanloaibo, worksheet):
+    db = client[databaseName]
+    collection = db[collectionName]
+    pipeline = [
+        {"$match":{"$and":[{"NhomBo":{"$in":nhombo["danhsach"]}},{"PhanLoaiBo":{"$in":phanloaibo["danhsach"]}}]}},
+        {"$group":{
+            "_id":None,
+            "soluong":{"$count":{}},
+            "danhsachsotai":{"$push":"$SoTai"}
+        }},
+        {"$project":{
+            "soluong":1,
+            "danhsachsotaijoined":{
+                "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }}
+        }}
+    ]
+    results = collection.aggregate(pipeline)
+    title = "Số lượng "+nhombo["tennhom"]+phanloaibo["tennhom"]+": "
+    for result in results:
+        print(title+str(result["soluong"]))
+        worksheet.append([title,result["soluong"],result["danhsachsotaijoined"]])
+
+
+
 
 def printAllNongTruong(
     client: MongoClient, databaseName, collectionName="NongTruongCo"

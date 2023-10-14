@@ -600,10 +600,10 @@ for bo in giongBo:
 
 # Xuat thong tin dan
 """
-for i in range(1,10):
+"""
+for i in range(1,10000):
     print("-- Lan xuat thu "+str(i)+"--")
     thongTinDan.exportThongTinDan(client, db, "BoNhapTrai")
-"""
 fileName = "baocaothang_" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 wb.save(fileName)
 

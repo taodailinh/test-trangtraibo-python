@@ -2,6 +2,8 @@ from pymongo import MongoClient
 from datetime import datetime
 import time
 
+date_format = "%Y-%m-%d"
+
 def tongdanbo(client: MongoClient,databaseName, collectionName,nhombo,phanloaibo, worksheet):
     db = client[databaseName]
     collection = db[collectionName]
@@ -92,7 +94,122 @@ def calArea(client: MongoClient, db, collection="NongTruongCo"):
     col = dbase[collection]
     dienTichTungNongTruong = list(col.aggregate(pipeline))
     for nongTruong in dienTichTungNongTruong:
-        print(nongTruong.DienTich)
+        print("Tong diện tích trồng các lô cỏ : "+str(nongTruong["DienTich"]))
+
+def dientichco_theohangmuccongviec(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)
+
+    pipeline = [
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": hangmuccongviec,"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lte":endDate}}},
+        # group lại theo nông trường
+        {
+            "$group": {
+                "_id": "null",
+                "TongDienTich": {"$sum": "$LoCoThucHien.DienTich"},
+            }
+        },
+        # project ra document
+        {
+            "$project": {
+                "_id": 0,
+                "DienTich": "$TongDienTich",
+            }
+        },
+    ]
+    dbase = client[db]
+    col = dbase[collection]
+    dienTichTungNongTruong = list(col.aggregate(pipeline))
+    for nongTruong in dienTichTungNongTruong:
+        print("Tổng diện tích các lô cỏ thực hiện "+hangmuccongviec+": "+str(nongTruong["DienTich"]))
+
+def dientichco_bonphanvoco(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)
+
+    pipeline = [
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lte":endDate}}},
+        # group lại theo nông trường
+        {
+            "$group": {
+                "_id": "null",
+                "TongDienTich": {"$sum": "$LoCoThucHien.DienTich"},
+            }
+        },
+        # project ra document
+        {
+            "$project": {
+                "_id": 0,
+                "DienTich": "$TongDienTich",
+            }
+        },
+    ]
+    dbase = client[db]
+    col = dbase[collection]
+    dienTichTungNongTruong = list(col.aggregate(pipeline))
+    for nongTruong in dienTichTungNongTruong:
+        print("Tổng diện tích các lô cỏ thực hiện bón phân vô cơ: "+str(nongTruong["DienTich"]))
+
+def dientichco_tegoc(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)
+
+    pipeline = [
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lte":endDate}}},
+        # group lại theo nông trường
+        {
+            "$group": {
+                "_id": "null",
+                "TongDienTich": {"$sum": "$LoCoThucHien.DienTich"},
+            }
+        },
+        # project ra document
+        {
+            "$project": {
+                "_id": 0,
+                "DienTich": "$TongDienTich",
+            }
+        },
+    ]
+    dbase = client[db]
+    col = dbase[collection]
+    dienTichTungNongTruong = list(col.aggregate(pipeline))
+    for nongTruong in dienTichTungNongTruong:
+        print("Tong diện tích tề gốc: "+str(nongTruong["DienTich"]))
+
+# Tổng khối lượng phân vô cơ
+def tongkhoiluong_phanvoco(client: MongoClient, db, hangmucvattu,startdate,enddate,collection="NongTruongCo",):
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)
+    print(startDate)
+    print(endDate)
+
+    pipeline = [
+        # group lại theo nông trường
+        {"$unwind":"$ThucHienCongVatTuThietBis"},
+        {"$unwind":"$ThucHienCongVatTuThietBis.VatTuThucHiens"},
+        {"$match":{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.TenVatTu":{"$in":hangmucvattu}}},
+        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHien":{"$gte":startDate},"ThucHienCongVatTuThietBis.NgayThucHien":{"$lte":endDate}}},
+        {
+            "$group": {
+                "_id": "null",
+                "Tongkhoiluong": {"$sum": "$ThucHienCongVatTuThietBis.VatTuThucHiens.SoLuong"},
+            }
+        },
+        # project ra document
+        {
+            "$project": {
+                "_id": 0,
+                "KhoiLuong": "$Tongkhoiluong",
+            }
+        },
+    ]
+    dbase = client[db]
+    col = dbase[collection]
+    dienTichTungNongTruong = list(col.aggregate(pipeline))
+    for nongTruong in dienTichTungNongTruong:
+        print("Tổng khối lượng phân vô cơ đã dùng: "+str(nongTruong["KhoiLuong"]/1000))
+
 
 
 # Tính lượng phân đã đưa vào luống (Đã xác nhận)

@@ -18,8 +18,8 @@ os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
 
 client = MongoClient(constants.CONNECTION_STRING)
 db = constants.DB
-startDate = "2023-10-21"
-endDate = "2023-10-21"
+startDate = "2023-09-22"
+endDate = "2023-10-22"
 
 tatCaNhomBo = {
     "tennhom": "bò",

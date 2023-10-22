@@ -101,7 +101,7 @@ def dientichco_theohangmuccongviec(client: MongoClient, db, hangmuccongviec,star
     endDate = datetime.strptime(enddate,date_format)
 
     pipeline = [
-        {"$match": {"HangMucCongViec.TenHangMucCongViec": hangmuccongviec,"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lte":endDate}}},
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": hangmuccongviec,"NgayThucHien":{"$gte":startDate,"$lte":endDate}}},
         # group lại theo nông trường
         {
             "$group": {
@@ -155,7 +155,7 @@ def dientichco_tegoc(client: MongoClient, db, hangmuccongviec,startdate,enddate,
     endDate = datetime.strptime(enddate,date_format)
 
     pipeline = [
-        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lte":endDate}}},
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate,"$lte":endDate}}},
         # group lại theo nông trường
         {
             "$group": {
@@ -189,7 +189,7 @@ def tongkhoiluong_phanvoco(client: MongoClient, db, hangmucvattu,startdate,endda
         {"$unwind":"$ThucHienCongVatTuThietBis"},
         {"$unwind":"$ThucHienCongVatTuThietBis.VatTuThucHiens"},
         {"$match":{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.TenVatTu":{"$in":hangmucvattu}}},
-        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHien":{"$gte":startDate},"ThucHienCongVatTuThietBis.NgayThucHien":{"$lte":endDate}}},
+        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHien":{"$gte":startDate, "$lte":endDate}}},
         {
             "$group": {
                 "_id": "null",

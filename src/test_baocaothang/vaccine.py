@@ -30,7 +30,9 @@ def tongSo_boDuocTiemVaccine(
     client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter,nhomVaccine
 ):
     db = client[dbName]
+    test_result_db = client["Linh_Test"]
     col = db[collectionName]
+    test_result_col = test_result_db["BaoCaoThang"]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -75,7 +77,17 @@ def tongSo_boDuocTiemVaccine(
     print(reportName)
     for result in results:
         print("   So luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        row = [reportName, result["soLuong"],]
+        if result != None:
+            test_result = {
+                "LoaiBaoCao":"Vaccine",
+                "NoiDung":"Tổng số bò được tiêm vaccine",
+                "SoLuong":result["soLuong"],
+                "NgayBatDau":startDate,
+                "NgayKetThuc":endDate,
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_col.insert_one(test_result)
         excelWriter.append(row)
 
 
@@ -85,6 +97,8 @@ def tongSo_boDuDieuKienTiem(
 ,nhombo = tatCaNhomBoSong):
     db = client[dbName]
     bo = db[bonhaptrai]
+    test_result_db = client["Linh_Test"]
+    test_result_col = test_result_db["BaoCaoThang"]
     tiemCol = db[tiemVaccineCollection]
     nhomVacCol = db[nhomVaccineCollection]
     lieutrinhCol = db[lieutrinhVaccineCollection]
@@ -203,12 +217,24 @@ def tongSo_boDuDieuKienTiem(
         print("   So luong:" + str(result["soLuong"]))
         row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
         excelWriter.append(row)
+        if result != None:    
+            test_result = {
+                "LoaiBaoCao":"Vaccine",
+                "NoiDung":"Tổng số bò đủ điều kiện tiêm vaccine",
+                "TenVaccine":nhomVaccine["ma"],
+                "SoLuong":result["soLuong"],
+                "NgayKiemTra":dateToCheck,
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_col.insert_one(test_result)
 
 def tongSo_boDuDieuKienTiem_THT(
     client: MongoClient, dbName, bonhaptrai, tiemVaccineCollection, nhomVaccineCollection, lieutrinhVaccineCollection, workingDate, excelWriter,nhomVaccine
 ,nhombo = tatCaNhomBoSong):
     db = client[dbName]
     bo = db[bonhaptrai]
+    test_result_db = client["Linh_Test"]
+    test_result_col = test_result_db["BaoCaoThang"]
     tiemCol = db[tiemVaccineCollection]
     nhomVacCol = db[nhomVaccineCollection]
     lieutrinhCol = db[lieutrinhVaccineCollection]
@@ -298,7 +324,7 @@ def tongSo_boDuDieuKienTiem_THT(
             "as":"dieutri"
         }},
         {"$match":{"dieutri":{"$size":0}}},
-        {"$sort":"SoTai"},
+        # {"$sort":"SoTai"},
         {
             "$group": {
                 "_id": "null",
@@ -331,6 +357,16 @@ def tongSo_boDuDieuKienTiem_THT(
     print(reportName)
     for result in results:
         print("   So luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+        row = [reportName, result["soLuong"]]
         excelWriter.append(row)
+        if result != None:
+            test_result = {
+                "LoaiBaoCao":"Vaccine",
+                "NoiDung":"Tổng số bò đủ điều kiện tiêm vaccine",
+                "TenVaccine":nhomVaccine["ma"],
+                "SoLuong":result["soLuong"],
+                "NgayKiemTra":dateToCheck,
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_col.insert_one(test_result)
 

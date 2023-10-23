@@ -18,8 +18,8 @@ os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
 
 client = MongoClient(constants.CONNECTION_STRING)
 db = constants.DB
-startDate = "2023-09-22"
-endDate = "2023-10-22"
+startDate = "2023-09-23"
+endDate = "2023-10-23"
 
 tatCaNhomBo = {
     "tennhom": "bò",
@@ -350,7 +350,7 @@ tatcavattu = [
   ]
 
 phanvoco = [
-    "Lân nung chảy",
+    # "Lân nung chảy",
     "Phân Kali",
     "Phân NPK",
     "Phân NPK",
@@ -370,6 +370,8 @@ querydashboard.dientichco_theohangmuccongviec(client,db,"Tưới nước",startD
 querydashboard.dientichco_tegoc(client,db,danhsachhangmuccongviec_tegoc,startDate,endDate,collection="ChiTietCongViecDongCo")
 
 querydashboard.tongkhoiluong_phanvoco(client,db,phanvoco,startDate,endDate,collection="ChiTietCongViecDongCo")
+
+querydashboard.tongdientich_chantha(client,db,startDate,endDate)
 
 """
 # Add this to keep webdriver stay running

@@ -2063,7 +2063,8 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
     soLuongKhamThai = 0
     for result in results_duocKhamThai:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [title1, result["soLuong"], result["danhsachsotaijoined"]]
+        row = [title1, result["soLuong"]]
+        
         excelWriter.append(row)
         soLuongKhamThai = result["soLuong"]
     if soLuongKhamThai == 0:

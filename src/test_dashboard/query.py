@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 date_format = "%Y-%m-%d"
@@ -73,12 +73,12 @@ def calArea(client: MongoClient, db, collection="NongTruongCo"):
         # unwind lô cỏ cũ
         {"$unwind": "$LoCos.LoCoCus"},
         # chỉ lấy những lô cỏ chưa quy hoạch
-        {"$match": {"LoCos.LoCoCus.IsQuyHach": False}},
+        {"$match": {"LoCos.LoCoCus.IsQuyHach": False,"LoaiDongCo":"BanChanTha"}},
         # group lại theo nông trường
         {
             "$group": {
                 "_id": "null",
-                "TongDienTich": {"$sum": "$LoCos.LoCoCus.DienTichTrong"},
+                "TongDienTich": {"$sum": "$LoCos.LoCoCus.DienTich"},
             }
         },
         # project ra document
@@ -94,14 +94,14 @@ def calArea(client: MongoClient, db, collection="NongTruongCo"):
     col = dbase[collection]
     dienTichTungNongTruong = list(col.aggregate(pipeline))
     for nongTruong in dienTichTungNongTruong:
-        print("Tong diện tích trồng các lô cỏ : "+str(nongTruong["DienTich"]))
+        print("Tổng diện tích trồng các lô cỏ : "+str(nongTruong["DienTich"]))
 
 def dientichco_theohangmuccongviec(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
     startDate = datetime.strptime(startdate,date_format)
-    endDate = datetime.strptime(enddate,date_format)
+    endDate = datetime.strptime(enddate,date_format) +timedelta(days=1)
 
     pipeline = [
-        {"$match": {"HangMucCongViec.TenHangMucCongViec": hangmuccongviec,"NgayThucHien":{"$gte":startDate,"$lte":endDate}}},
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": hangmuccongviec,"ThucHienCongVatTuThietBis":{"$elemMatch":{"NgayThucHien":{"$gte":startDate,"$lt":endDate}}}}},
         # group lại theo nông trường
         {
             "$group": {
@@ -125,10 +125,10 @@ def dientichco_theohangmuccongviec(client: MongoClient, db, hangmuccongviec,star
 
 def dientichco_bonphanvoco(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
     startDate = datetime.strptime(startdate,date_format)
-    endDate = datetime.strptime(enddate,date_format)
+    endDate = datetime.strptime(enddate,date_format) +timedelta(days=1)
 
     pipeline = [
-        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lte":endDate}}},
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate},"NgayThucHien":{"$lt":endDate}}},
         # group lại theo nông trường
         {
             "$group": {
@@ -152,15 +152,17 @@ def dientichco_bonphanvoco(client: MongoClient, db, hangmuccongviec,startdate,en
 
 def dientichco_tegoc(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
     startDate = datetime.strptime(startdate,date_format)
-    endDate = datetime.strptime(enddate,date_format)
+    endDate = datetime.strptime(enddate,date_format)+timedelta(days=1)
 
     pipeline = [
-        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec},"NgayThucHien":{"$gte":startDate,"$lte":endDate}}},
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec}}},
+        {"$unwind":"$ThucHienCongVatTuThietBis"},
+        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHienChinhThuc":{"$gte":startDate,"$lt":endDate}}},
         # group lại theo nông trường
         {
             "$group": {
                 "_id": "null",
-                "TongDienTich": {"$sum": "$LoCoThucHien.DienTich"},
+                "TongDienTich": {"$sum": "$ThucHienCongVatTuThietBis.KhoiLuongQuyDoi"},
             }
         },
         # project ra document
@@ -175,21 +177,18 @@ def dientichco_tegoc(client: MongoClient, db, hangmuccongviec,startdate,enddate,
     col = dbase[collection]
     dienTichTungNongTruong = list(col.aggregate(pipeline))
     for nongTruong in dienTichTungNongTruong:
-        print("Tong diện tích tề gốc: "+str(nongTruong["DienTich"]))
+        print("Tổng diện tích tề gốc: "+str(nongTruong["DienTich"]))
 
 # Tổng khối lượng phân vô cơ
 def tongkhoiluong_phanvoco(client: MongoClient, db, hangmucvattu,startdate,enddate,collection="NongTruongCo",):
     startDate = datetime.strptime(startdate,date_format)
-    endDate = datetime.strptime(enddate,date_format)
-    print(startDate)
-    print(endDate)
-
+    endDate = datetime.strptime(enddate,date_format)+timedelta(days=1)
     pipeline = [
         # group lại theo nông trường
         {"$unwind":"$ThucHienCongVatTuThietBis"},
+        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHienChinhThuc":{"$gte":startDate,"$lt":endDate}}},
         {"$unwind":"$ThucHienCongVatTuThietBis.VatTuThucHiens"},
-        {"$match":{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.TenVatTu":{"$in":hangmucvattu}}},
-        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHien":{"$gte":startDate, "$lte":endDate}}},
+        {"$match":{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.LoaiVatTu":"Phân vô cơ"}},
         {
             "$group": {
                 "_id": "null",
@@ -211,13 +210,44 @@ def tongkhoiluong_phanvoco(client: MongoClient, db, hangmucvattu,startdate,endda
         print("Tổng khối lượng phân vô cơ đã dùng: "+str(nongTruong["KhoiLuong"]/1000))
 
 
+def tongdientich_chantha(client: MongoClient, db, startdate,enddate,collection="HangMucCongViecChanTha",):
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)+timedelta(days=1)
+    pipeline = [
+        {"$match":{
+            "NgayThucHien":{
+                "$gte":startDate,
+                "$lt":endDate
+            }
+        }},
+        {
+            "$group": {
+                "_id": "null",
+                "Tongkhoiluong": {"$sum": "$LoCo.DienTich"},
+            }
+        },
+        # project ra document
+        {
+            "$project": {
+                "_id": 0,
+                "KhoiLuong": "$Tongkhoiluong",
+            }
+        },
+    ]
+    dbase = client[db]
+    col = dbase[collection]
+    dienTichTungNongTruong = list(col.aggregate(pipeline))
+    for nongTruong in dienTichTungNongTruong:
+        print("Tổng diện tích chăn thả: "+str(nongTruong["KhoiLuong"]))
+
+
 
 # Tính lượng phân đã đưa vào luống (Đã xác nhận)
 def tinhTongPhanDuaVaoLuong(
-    client: MongoClient, db, collection="PhieuCongViecLuongPhan"
+    client: MongoClient, db,startdate,enddate, collection="PhieuCongViecLuongPhan"
 ):
-    startDate = datetime(2023, 9, 1)
-    endDate = datetime(2023, 9, 13)
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)+timedelta(days=1)
     pipeline = [
         # Giới hạn ngày giờ
         {

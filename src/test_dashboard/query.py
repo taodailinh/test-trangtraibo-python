@@ -101,12 +101,14 @@ def dientichco_theohangmuccongviec(client: MongoClient, db, hangmuccongviec,star
     endDate = datetime.strptime(enddate,date_format) +timedelta(days=1)
 
     pipeline = [
-        {"$match": {"HangMucCongViec.TenHangMucCongViec": hangmuccongviec,"ThucHienCongVatTuThietBis":{"$elemMatch":{"NgayThucHien":{"$gte":startDate,"$lt":endDate}}}}},
+        {"$match": {"HangMucCongViec.TenHangMucCongViec": {"$in":hangmuccongviec}}},
+        {"$unwind":"$ThucHienCongVatTuThietBis"},
+        {"$match": {"ThucHienCongVatTuThietBis.NgayThucHienChinhThuc":{"$gte":startDate,"$lt":endDate}}},
         # group lại theo nông trường
         {
             "$group": {
                 "_id": "null",
-                "TongDienTich": {"$sum": "$LoCoThucHien.DienTich"},
+                "TongDienTich": {"$sum": "$ThucHienCongVatTuThietBis.KhoiLuongQuyDoi"},
             }
         },
         # project ra document
@@ -121,7 +123,7 @@ def dientichco_theohangmuccongviec(client: MongoClient, db, hangmuccongviec,star
     col = dbase[collection]
     dienTichTungNongTruong = list(col.aggregate(pipeline))
     for nongTruong in dienTichTungNongTruong:
-        print("Tổng diện tích các lô cỏ thực hiện "+hangmuccongviec+": "+str(nongTruong["DienTich"]))
+        print("Tổng diện tích các lô cỏ thực hiện "+str(hangmuccongviec)+": "+str(nongTruong["DienTich"]))
 
 def dientichco_bonphanvoco(client: MongoClient, db, hangmuccongviec,startdate,enddate,collection="NongTruongCo",):
     startDate = datetime.strptime(startdate,date_format)
@@ -188,7 +190,7 @@ def tongkhoiluong_phanvoco(client: MongoClient, db, hangmucvattu,startdate,endda
         {"$unwind":"$ThucHienCongVatTuThietBis"},
         {"$match": {"ThucHienCongVatTuThietBis.NgayThucHienChinhThuc":{"$gte":startDate,"$lt":endDate}}},
         {"$unwind":"$ThucHienCongVatTuThietBis.VatTuThucHiens"},
-        {"$match":{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.LoaiVatTu":"Phân vô cơ"}},
+        {"$match":{"$or":[{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.LoaiVatTu":"Phân vô cơ"},{"ThucHienCongVatTuThietBis.VatTuThucHiens.VatTu.TenVatTu":{"$in":hangmucvattu}}]}},
         {
             "$group": {
                 "_id": "null",
@@ -223,7 +225,7 @@ def tongdientich_chantha(client: MongoClient, db, startdate,enddate,collection="
         {
             "$group": {
                 "_id": "null",
-                "Tongkhoiluong": {"$sum": "$LoCo.DienTich"},
+                "Tongkhoiluong": {"$sum": "$LoCoCu.DienTich"},
             }
         },
         # project ra document

@@ -11,7 +11,7 @@ from selenium.common.exceptions import NoSuchElementException
 from datetime import datetime
 
 
-def testPhanQuyenUser(user, pw, page, trai=1):
+def testPhanQuyenUser(user, pw, page,excelWriter, trai=1):
     danhSachTrai = ["IA PÚCH", "EA H'LEO", "KOUN MOM", "SNUOL", "SAYSETTHA"]
 
     # Add this to keep webdriver stay running
@@ -27,7 +27,7 @@ def testPhanQuyenUser(user, pw, page, trai=1):
     # Đăng nhập
     driver.get(page)
 
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(3)
 
     username = driver.find_element(By.ID, "Input_UserName")
 
@@ -46,17 +46,13 @@ def testPhanQuyenUser(user, pw, page, trai=1):
     chonTrai.select_by_visible_text(danhSachTrai[trai - 1])
 
     script_path = os.path.dirname(os.path.abspath(__file__))
-    print("Current path")
-    print(script_path)
+    # print("Current path")
+    # print(script_path)
 
     workbook_path = os.path.join(script_path, "link.xlsx")
 
     wb = openpyxl.load_workbook(workbook_path)
     ws = wb.active
-
-    errorLog = openpyxl.Workbook()
-    errorWs = errorLog.active
-    currentRowErrorLog = 0
 
     for row in ws.iter_rows(min_row=2, min_col=1, max_row=98, max_col=trai + 1):
         # for row in ws.iter_rows(min_row=2, min_col=1, max_row=9, max_col=trai + 1):
@@ -67,58 +63,47 @@ def testPhanQuyenUser(user, pw, page, trai=1):
         """
         link = row[0].value
         capQuyen = row[trai].value
+        print(capQuyen)
         driver.get(page + link)
+        result = ""
         try:
-            driver.find_element(By.XPATH, "/html/body/div[1]/app/div/div/h4")
-            if capQuyen == "X":
-                currentRowErrorLog += 1
-                errorWs.cell(currentRowErrorLog, 1).value = (
+            div = driver.find_element(By.XPATH,"//h4[contains(text(), 'Bạn không có quyền')]")
+            print(div)
+            # driver.find_element(By.XPATH, "/html/body/div[1]/app/div/div/h4")
+            if capQuyen == "x":
+                result = (
                     "failed at trai "
                     + str(trai)
-                    + "o link"
+                    + " o link "
                     + link
                     + ", cap quyen nhung khong vao duoc"
                 )
-                print(
-                    "failed at trai "
-                    + str(trai)
-                    + "o link"
-                    + link
-                    + ", Cap quyen nhung khong vao duoc"
-                )
+                excelWriter.append([result])
+                print(result)
             else:
-                pass
-                currentRowErrorLog += 1
-                errorWs.cell(currentRowErrorLog, 1).value = (
-                    "passed at trai " + str(trai) + "o link" + link + ", OK"
-                )
+                result = (
+                    "passed at trai " + str(trai) + " o link " + link + ", OK. Không cấp quyền và không vào được"
+                )                
+                excelWriter.append([result])
+                print(result)
         except NoSuchElementException:
-            if capQuyen == None:
-                pass
-                currentRowErrorLog += 1
-                errorWs.cell(currentRowErrorLog, 1).value = (
-                    "passed at trai " + str(trai) + "o link" + link + ", OK"
+            if capQuyen == "x":
+                result = (
+                    "passed at trai " + str(trai) + " o link " + link + ", OK. Cấp quyền và vào được"
                 )
-
+                excelWriter.append([result])
+                print(result)
             else:
-                print(
+                result = (
                     "failed at trai "
                     + str(trai)
-                    + "o link"
+                    + " o link "
                     + link
                     + ", Khong cap quyen nhung vao duoc"
                 )
-                currentRowErrorLog += 1
-                errorWs.cell(currentRowErrorLog, 1).value = (
-                    "failed at trai "
-                    + str(trai)
-                    + "o link"
-                    + link
-                    + ", Khong cap quyen nhung vao duoc"
-                )
+                excelWriter.append([result])
+                print(result)
         time.sleep(3)
-    fileName = datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
-    errorLog.save(fileName)
     driver.quit()
     """"
     # Connect to db

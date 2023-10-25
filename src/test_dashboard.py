@@ -18,8 +18,8 @@ os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
 
 client = MongoClient(constants.CONNECTION_STRING)
 db = constants.DB
-startDate = "2023-09-23"
-endDate = "2023-10-23"
+startDate = "2023-09-24"
+endDate = "2023-10-24"
 
 tatCaNhomBo = {
     "tennhom": "bò",
@@ -362,7 +362,7 @@ phanvoco = [
 #     querydashboard.dientichco_theohangmuccongviec(client,db,hangmuc,startDate,endDate,collection="ChiTietCongViecDongCo")
 
 # Tổng diện tích các lô cỏ thực hiện tưới nước
-querydashboard.dientichco_theohangmuccongviec(client,db,"Tưới nước",startDate,endDate,collection="ChiTietCongViecDongCo")
+querydashboard.dientichco_theohangmuccongviec(client,db,["Tưới nước"],startDate,endDate,collection="ChiTietCongViecDongCo")
 
 
 # querydashboard.dientichco_bonphanvoco(client,db,danhsachhangmuccongviec_bonphanvoco,startDate,endDate,collection="ChiTietCongViecDongCo")

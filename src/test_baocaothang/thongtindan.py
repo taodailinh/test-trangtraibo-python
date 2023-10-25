@@ -227,24 +227,43 @@ def beDuoi100Ngay(client: MongoClient, dbName, collectionName, danhsachnhombo):
 
 
 def soBoChoPhoi(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
+    client: MongoClient, dbName, collectionName="BoNhapTrai"
 ):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    test_result_col = client["Linh_Test"]["BaoCaoThang"]
     db = client[dbName]
     col = db[collectionName]
     pipeline = [
-        {"$match": {"$and": [{"NhomBo": "Bo"}, {"TenantId": "0"}]}},
-        {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
+        {"$match":  {"NhomBo": "Bo"}},
         {
             "$match": {"PhanLoaiBo": {"$in": ["BoChoPhoi", "BoHauBiChoPhoi"]}},
         },
-        {"$group": {"_id": "null", "TongSoChoPhoi": {"$count": {}}}},
-        {"$project": {"_id": 0, "TongSoChoPhoi": 1}},
+        {"$group": {
+            "_id": "null", 
+            "soluong": {"$count": {}},
+            "danhsachsotai":{"$push":"$SoTai"}
+            }},
+        {"$project": {"_id": 0, "soluong": 1,"danhsachsotaijoined":{
+            "$reduce":{
+                "input":"$danhsachsotai",
+                "initialValue":"",
+                "in":{
+                    "$concat":["$$value",{"$cond":[{"$eq":["$$value",""]},"",";"]},"$$this"]
+                }
+            }
+        }}},
     ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
+    results = col.aggregate(pipeline)
+    for result in results:
+        if result != None:
+            test_result = {
+                "LoaiBaoCao":"PhoiGiong",
+                "NoiDung":"Tổng số bò chờ phối (chưa loại trừ phiếu thú y)",
+                "SoLuong":result["soluong"],
+                "NgayBaoCao":datetime.now(),
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_col.insert_one(test_result)
+        print(result["soluong"])
 
 
 # 2	Tổng số bò mang thai từ 2-7 tháng

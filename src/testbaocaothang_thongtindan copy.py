@@ -1,24 +1,16 @@
 from datetime import datetime
-import test_dashboard.query as queryDashBoard
 import test_phanquyen.test_phan_quyen as test_phan_quyen
-import test_baocaothang.phoigiong as phoiGiong
-import test_baocaothang.thongtindan as thongTinDan
-import test_baocaothang.thuy as thuY
-import test_thongtindan.test_nhap_be as nhapBe
-import test_thongtindan.xoabo as xoaBo
 import constants
 from pymongo import MongoClient
 import time
 import os
 from openpyxl import Workbook
 
-page = "https://dev-trangtrai.aristqnu.com/"
+page = "https://test-trangtraibo.aristqnu.com/"
 
 user = "admin"
 password = "admintest"
 
-startDate = "2023-09-01"
-endDate = "2023-09-30"
 
 # Connect to mongodb
 client = MongoClient(constants.CONNECTION_STRING)
@@ -88,8 +80,6 @@ giongBo = [
     "BBB (Blan Blue Belgium)",
 ]
 
-thongTinDan.soBoChoPhoi(client,db)
-"""
 
 # Print current path
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -104,6 +94,7 @@ xoaBo.xoaBo(client, db, "BoNhapTrai", "F202300609")
 
 # Test phân quyền
 test_phan_quyen.testPhanQuyenUser("admin", "admintest", page)
+"""
 
 phoiGiong.printAllKetQuaKhamThai(client, db, "ThongTinKhamThai")
 
@@ -121,9 +112,6 @@ phoiGiong.soLuongBoKhamPhoiLan1(
 )
 
 # Danh sach bo it hon 100 ngay tuoi trong cac nhom bo
-
-
-
 
 # So luong bo cho phoi
 thongTinDan.tongSoBo(
@@ -259,6 +247,7 @@ print("-- Test bao cao thu y --")
 # 1,1	Tổng số bò đã điều trị khỏi bệnh
 thuY.tongSo_boKhoiBenh(client, db, "DieuTriBoBenh", startDate, endDate)
 
+"""
 # 1,2	Tổng số bò đã điều trị  (Chết):
 thuY.tongSo_boChetCoDieuTri(client, db, "DieuTriBoBenh", startDate, endDate)
 
@@ -609,6 +598,6 @@ for i in range(1,10000):
     thongTinDan.exportThongTinDan(client, db, "BoNhapTrai")
 fileName = "baocaothang_" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 wb.save(fileName)
-"""
+
 # Close mongo connection
 client.close()

@@ -86,7 +86,8 @@ def taophieuphoigiong(client,driver, page):
     time.sleep(5)
     # chọn tất cả 25 con
     wait.until(EC.invisibility_of_element((By.XPATH,"/html/body/div/app/div/div/div/div[5]/div[2]/div[1]")))
-    checkall = wait.until(EC.element_to_be_clickable((By.XPATH,"/html/body/div/app/div/div/div/div[5]/div/div[2]/div/table/thead/tr/th[1]/div[1]/div/input")))
+    time.sleep(1)
+    checkall = wait.until(EC.element_to_be_clickable((By.XPATH,"/html/body/div[1]/app/div/div/div/div[5]/div/div[2]/div/table/thead/tr/th[1]/div[1]/div")))
     checkall.click()
     # bấm nút tạo phiếu
     taophieu = wait.until(EC.element_to_be_clickable((By.XPATH,"//button[text()='Tạo phiếu công việc']")))
@@ -114,6 +115,13 @@ def vaotrangphoigiong(client,driver,page):
 #     driver.quit()
     time.sleep(5)
     driver.get(page+"phoigiong/khamphoigiong")
+    # Tìm bò phối giống
+    # Phối giống
+    # Lưu phối giống
+    # Lưu lại sô tai
+    # Xóa phối giống
+    # Xóa thông tin phối giống của bò
+    # Cập nhật giai đoạn bò
 
 t1 = Thread(target = xuatthongtindan, args =(client,drivers,page ))
 t2 = Thread(target = vaotrangphoigiong, args =(client,driverPhoiGiong,page ))

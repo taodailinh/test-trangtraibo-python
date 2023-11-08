@@ -87,10 +87,8 @@ print("Current path")
 print(script_path)
 
 # Nhập bê
-nhapBe.nhapbe(client, db, page, user, password)
 time.sleep(10)
 # Xóa bê vừa nhập
-xoaBo.xoaBo(client, db, "BoNhapTrai", "F202300609")
 
 # Test phân quyền
 test_phan_quyen.testPhanQuyenUser("admin", "admintest", page)

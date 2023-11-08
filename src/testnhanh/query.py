@@ -209,3 +209,52 @@ def tinh_tongsobobe(client: MongoClient,
     end = time.time()
     totaltime = end-start
     print(str(totaltime))
+
+
+def lichsuchuyenchuong(client: MongoClient,
+    dbName,
+    collectionName,
+    sotai,
+    nhomphanloai=tatCaPhanLoai,
+    gioitinh=gioiTinhTatCa,
+    nhombo=tatCaNhomBo,
+):
+    print("Lịch sử chuyển chuồng số tai: "+ sotai)
+    db = client[dbName]
+    col = db[collectionName]
+    # startDate = datetime.strptime(startdate, date_format)
+    # endDate = datetime.strptime(enddate, date_format)
+    pipeline = [
+        {
+            "$match": {
+                "DanhSachChuyens":{
+                    "$elemMatch":{
+                        "SoTai":sotai,
+                    }
+                }
+            }
+        },
+        {
+            "$unwind":"$DanhSachChuyens",
+        },
+        {"$match":{
+            "DanhSachChuyens.SoTai":sotai,
+        }},
+        {
+            "$project": {
+                "LoaiDieuChuyen":1,
+                "NghiepVu":1,
+                "DanhSachChuyens.SoTai":1,
+                "DanhSachChuyens.CreatedAt":1,
+                "DanhSachChuyens.OChuongHienTai":1,
+                "DanhSachChuyens.OchuongChuanBiChuyen":1,
+        },
+        }
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    results = col.aggregate(pipeline)
+    i = 0
+    for result in results:
+        i+=1
+        print(str(i)+". "+str(result["DanhSachChuyens"]["CreatedAt"])+", loại chuyển:"+result["LoaiDieuChuyen"]+", nghiệp vụ chuyển: "+str(result["NghiepVu"]))

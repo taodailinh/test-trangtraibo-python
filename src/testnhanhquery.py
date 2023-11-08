@@ -18,8 +18,8 @@ client = MongoClient(constants.CONNECTION_STRING)
 db = constants.DB
 
 # Create workbook log
-wb = Workbook()
-ws = wb.active
+# wb = Workbook()
+# ws = wb.active
 danhsachnhombo = ["XuatBan", "Bo", "Be"]
 
 # Danh sách phân loại bò
@@ -90,10 +90,11 @@ lanPhoi3 = {"min":3,"max":999}
 """
 # query.tongSoBo_saiLuaDe(client,db,"BoNhapTrai",startDate,endDate,ws)
 
-query.danhsachbe(client,db,"BoNhapTrai",startDate,endDate,ws,nhombo=nhombovabe)
-query.tinh_tongsobobe(client,db,"BoNhapTrai",startDate,endDate,ws)
-fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
-wb.save(fileName)
+# query.danhsachbe(client,db,"BoNhapTrai",startDate,endDate,ws,nhombo=nhombovabe)
+# query.tinh_tongsobobe(client,db,"BoNhapTrai",startDate,endDate,ws)
+query.lichsuchuyenchuong(client,db,"ChuChuyenDan","MTC433")
+# fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
+# wb.save(fileName)
 
 # Close mongo connection
 client.close()

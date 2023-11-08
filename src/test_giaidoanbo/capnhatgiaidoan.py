@@ -19,29 +19,86 @@ def tinhgiaidoanbo(client,db,datetocheck,sotai):
         lansinhcuoicung = max(bo["ThongTinSinhSans"], key=lambda x: x["NgaySinh"])
         ngaydecuoicung = lansinhcuoicung["NgaySinh"]
         print("Ngày đẻ gần nhất: "+str(ngaydecuoicung))
+        timelinenhangiong.append({
+            "NgayThucHien":lansinhcuoicung["NgaySinh"],
+            "NgayTao":lansinhcuoicung["NgaySinh"],
+            "HangMuc":"Đẻ",
+            "KetQua":{
+                "SoTaiBe":lansinhcuoicung["SoTaiBe"]
+            }
+        })
 
     if len(bo["ThongTinKhamThais"]) != 0:
         lankhamgannhat = max(bo["ThongTinKhamThais"], key=lambda x: x["NgayKham"])
         ngaykhamthaicuoicung = lankhamgannhat["NgayKham"]
         ketquakhamgannhat = lankhamgannhat["KetQuaKham"]
         print("Ngày khám thai gần nhất: "+str(ngaykhamthaicuoicung)+" với kết quả "+ketquakhamgannhat)
+        timelinenhangiong.append({
+            "NgayThucHien":ngaykhamthaicuoicung,
+            "NgayTao":ngaykhamthaicuoicung,
+            "HangMuc":"Khám thai",
+            "KetQua":{
+                "KetQuaKham":lankhamgannhat["KetQuaKham"]
+            }
+        })
+
 
     if len(bo["ThongTinPhoiGiongs"]) != 0:
         lanphoigannhat = max(bo["ThongTinPhoiGiongs"], key=lambda x: x["NgayPhoi"])
         ngayphoicuoicung = lanphoigannhat["NgayPhoi"]
         print("Ngày phối gần nhất: "+str(ngayphoicuoicung))
+        timelinenhangiong.append({
+            "NgayThucHien":ngayphoicuoicung,
+            "NgayTao":lanphoigannhat["CreatedAt"],
+            "HangMuc":"Phối giống",
+            "KetQua":{
+                "VeDuc":lanphoigannhat["GhepDuc"],
+                "VeDucKhongQuaPhoi":lanphoigannhat["GhepDucKhongQuaPhoi"],
+                "NgayVeDuc":lanphoigannhat["NgayGhepDuc"],                
+                "LanPhoi":lanphoigannhat["LanPhoi"]
+            }
+        })
 
     if len(bo["XuLySinhSans"]) != 0:
         # lanxulygannhat = max(bo["XuLySinhSans"], key=lambda x: max(x["LieuTrinhApDungs"], key=lambda y: y["NgayThucHien"]))
-        ngayxlcuoimoidot = []
+        buocxlcuoimoidot = []
+
         for xuly in bo["XuLySinhSans"]:
-            dotcuoi = max(xuly["LieuTrinhApDungs"], key=lambda x: x["NgayThucHien"])
-            ngayxlcuoimoidot.append(dotcuoi)
-        ngayxulysinhsancuoicung = max(ngayxlcuoimoidot, key=lambda x: x["NgayThucHien"])["NgayThucHien"]
+            buocxlcuoi = max(xuly["LieuTrinhApDungs"], key=lambda x: x["NgayThucHien"])
+            buocxlcuoimoidot.append({"ThongTinBuocXL":buocxlcuoi,"idDotXuLy":xuly["_id"]})
+        xulycuoi = max(buocxlcuoimoidot, key=lambda x: x["ThongTinBuocXL"]["NgayThucHien"])
+        ngayxulycuoi = xulycuoi["ThongTinBuocXL"]["NgayThucHien"]
+        idDotXuLyCuoi = xulycuoi["idDotXuLy"]
         # print(ngaycuoixlssmoidot)
         # ngayphoicuoicung = lanphoigannhat["NgayThucHien"]
-        print("Ngày xử lý gần nhất: "+str(ngayxulysinhsancuoicung))
+        print("Ngày xử lý gần nhất: "+str(ngayxulycuoi))
+        timelinenhangiong.append({
+            "NgayThucHien":ngayxulycuoi,
+            "HangMuc":"Xử lý sinh sản",
+            "KetQua":{
+                "idDotXuLy":idDotXuLyCuoi,
+            }
+        })
+    if len(timelinenhangiong) != 0:
+        sortedtimeline = sorted(timelinenhangiong,key=lambda x:x["NgayThucHien"],reverse=True)
+        khamthai = (x for x in sortedtimeline if x["HangMuc"]=="Khám thai")
+        khamthaigannhat = next(khamthai) # lần khám thai gần nhất
 
+        phoigiong = (x for x in sortedtimeline if x["HangMuc"]=="Phối giống")
+        phoigionggannhat = next(phoigiong) # lần phối giống gần nhất
+
+        xlss = (x for x in sortedtimeline if x["HangMuc"]=="Xử lý sinh sản")
+        xlssgannhat = next(xlss) # lần xử lý sinh sản gần nhât
+
+        de = (x for x in sortedtimeline if x["HangMuc"]=="Đẻ")
+        degannhat = next(de) # lần đẻ gần nhât
+
+
+
+        print("Công việc cuối: "+sortedtimeline[0]["HangMuc"])
+        if sortedtimeline[0]["HangMuc"] == "Khám thai":
+            print(sortedtimeline[0]["KetQua"]["KetQuaKham"])
+            print("Ngày có thai: "+str(phoigionggannhat["NgayThucHien"]))
     print("Hoàn thành số tai " +sotai)
 
 

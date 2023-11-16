@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import time
+import constants
 
 date_format = "%Y-%m-%d"
 
@@ -27,14 +28,14 @@ gioiTinhTatCa = {
 
 # 1	Tổng số bò đã được tiêm vaccine
 def tongSo_boDuocTiemVaccine(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter,nhomVaccine
+    client: MongoClient, nhomVaccine
 ):
-    db = client[dbName]
-    test_result_db = client["Linh_Test"]
-    col = db[collectionName]
-    test_result_col = test_result_db["BaoCaoThang"]
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    test_result_db = client[constants.TEST_RESULT_DB]
+    test_result_col = test_result_db[constants.TEST_RESULT_COL_BAOCAOTHANG]
+    db = client[constants.DB]
+    col = db[constants.DB_COL_TIEMVACCINE]
+    startDate = datetime.strptime(constants.START_DATE, date_format)
+    endDate = datetime.strptime(constants.END_DATE, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
@@ -82,13 +83,13 @@ def tongSo_boDuocTiemVaccine(
             test_result = {
                 "LoaiBaoCao":"Vaccine",
                 "NoiDung":"Tổng số bò được tiêm vaccine",
+                "CreatedAt":datetime.now(),
                 "SoLuong":result["soLuong"],
                 "NgayBatDau":startDate,
                 "NgayKetThuc":endDate,
                 "DanhSachSoTai":result["danhsachsotaijoined"]
             }
             test_result_col.insert_one(test_result)
-        excelWriter.append(row)
 
 
 # 2. Tổng số bò đủ điều kiện tiêm vaccine (trừ tụ huyết trùng)
@@ -102,7 +103,7 @@ def tongSo_boDuDieuKienTiem(
     tiemCol = db[tiemVaccineCollection]
     nhomVacCol = db[nhomVaccineCollection]
     lieutrinhCol = db[lieutrinhVaccineCollection]
-    dateToCheck = datetime.strptime(workingDate, date_format)
+    dateToCheck = datetime.strptime(workingDate, date_format)+timedelta(days=1)
 
     print(nhomVaccine["ma"])
 
@@ -221,6 +222,7 @@ def tongSo_boDuDieuKienTiem(
             test_result = {
                 "LoaiBaoCao":"Vaccine",
                 "NoiDung":"Tổng số bò đủ điều kiện tiêm vaccine",
+                "CreatedAt":datetime.now(),
                 "TenVaccine":nhomVaccine["ma"],
                 "SoLuong":result["soLuong"],
                 "NgayKiemTra":dateToCheck,
@@ -229,12 +231,12 @@ def tongSo_boDuDieuKienTiem(
             test_result_col.insert_one(test_result)
 
 def tongSo_boDuDieuKienTiem_THT(
-    client: MongoClient, dbName, bonhaptrai, tiemVaccineCollection, nhomVaccineCollection, lieutrinhVaccineCollection, workingDate, excelWriter,nhomVaccine
+    client: MongoClient, dbName, bonhaptrai, tiemVaccineCollection, nhomVaccineCollection, lieutrinhVaccineCollection, workingDate, excelWriter, nhomVaccine
 ,nhombo = tatCaNhomBoSong):
     db = client[dbName]
     bo = db[bonhaptrai]
-    test_result_db = client["Linh_Test"]
-    test_result_col = test_result_db["BaoCaoThang"]
+    test_result_db = client[constants.TEST_RESULT_DB]
+    test_result_col = test_result_db[constants.TEST_RESULT_COL_BAOCAOTHANG]
     tiemCol = db[tiemVaccineCollection]
     nhomVacCol = db[nhomVaccineCollection]
     lieutrinhCol = db[lieutrinhVaccineCollection]
@@ -299,7 +301,7 @@ def tongSo_boDuDieuKienTiem_THT(
         # Bê tới/quá ngày nhắc lại nhưng chưa tiêm
         {"$and":[{"NgaySinh":{"$ne":None}},{"$or":[{"LichSuTiemVaccines":{"$size":0}},{"LichSuTiemVaccines":{"$not":{"$elemMatch":{"NgayThucHien":{"$gte":datethreshold2},"DanhMucVaccine.NhomVaccineModel._id":nhomVaccine["_id"]}}}}]}]},
         ]}},
-        # Trừ bò mang thai trên 240 ngày
+        # Trừ bò mang thai trên 240 ngày và đẻ dưới 15 ngày
         {"$match":{
             "$nor":[{"$and":[
                 {"NhomBo":"BoMangThaiLon"},
@@ -310,21 +312,32 @@ def tongSo_boDuDieuKienTiem_THT(
                 {"ThongTinSinhSans.-1.NgaySinh":{"$gt":ngaydetoithieu}}
             ]}]
         }},
-        # Trừ bò đẻ dưới 15 ngày
         # Trừ bò nằm trong phiếu điều trị thú y
-        {"$lookup":{
-            "from":"DieuTriBoBenh",
-            "localField":"SoTai",
-            "foreignField":"Bo.SoTai",
-            "let":{"ngayKham":"$NgayKham"},
-            "pipeline":[
-            {"$match":{"TinhTrangDieuTri":{"$in":["ChuaKham","DaKham","DangDieuTri"]}}},
-            {"$sort":{"NgayNhapVien":-1}},
-            ],
-            "as":"dieutri"
-        }},
-        {"$match":{"dieutri":{"$size":0}}},
+
+        # {"$lookup":{
+        #     "from":"DieuTriBoBenh",
+        #     "localField":"SoTai",
+        #     "foreignField":"Bo.SoTai",
+        #     "let":{"ngayKham":"$NgayKham"},
+        #     "pipeline":[
+        #     {"$match":{"TinhTrangDieuTri":{"$in":["ChuaKham","DaKham","DangDieuTri"]}}},
+        #     {"$sort":{"NgayNhapVien":-1}},
+        #     ],
+        #     "as":"dieutri"
+        # }},
+        # {"$match":{"dieutri":{"$size":0}}},
         # {"$sort":"SoTai"},
+        {"$match":{
+            "$not":{
+                "LichSuDieuTris":{
+                    "$elemMatch":{
+                        "TinhTrangDieuTri":{
+                            "$in":["DangDieuTri","DaKham","ChuaKham"]
+                        }
+                    }
+                }
+            }
+        }},
         {
             "$group": {
                 "_id": "null",
@@ -363,6 +376,7 @@ def tongSo_boDuDieuKienTiem_THT(
             test_result = {
                 "LoaiBaoCao":"Vaccine",
                 "NoiDung":"Tổng số bò đủ điều kiện tiêm vaccine",
+                "CreatedAt":datetime.now(),
                 "TenVaccine":nhomVaccine["ma"],
                 "SoLuong":result["soLuong"],
                 "NgayKiemTra":dateToCheck,

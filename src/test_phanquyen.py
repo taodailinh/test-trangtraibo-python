@@ -6,10 +6,10 @@ import time
 import os
 from openpyxl import Workbook
 
-page = "https://test-trangtraibo.aristqnu.com/"
+page = "https://dev-trangtraibo.aristqnu.com/"
 
-user = "admin"
-password = "admintest"
+user = "ngocnt"
+password = "thagrico"
 
 
 # Connect to mongodb
@@ -89,7 +89,9 @@ time.sleep(10)
 # Xóa bê vừa nhập
 
 # Test phân quyền
-test_phan_quyen.testPhanQuyenUser("admin", "admintest", page,ws,trai=5)
+# test_phan_quyen.testPhanQuyenUser(user, password, page,ws,trai=2)
+test_phan_quyen.testPhanQuyenUser(user, password, page,ws,trai=3)
+
 """
 
 """

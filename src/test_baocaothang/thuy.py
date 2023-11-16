@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from datetime import datetime
 import time
+from client import db, test_result_collection
 
 date_format = "%Y-%m-%d"
 
@@ -22,9 +23,7 @@ gioiTinhTatCa = {
 
 
 # 1,1	Tổng số bò đã điều trị khỏi bệnh
-def tongSo_boKhoiBenh(client: MongoClient, dbName, collectionName, startdate, enddate):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boKhoiBenh(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -44,18 +43,14 @@ def tongSo_boKhoiBenh(client: MongoClient, dbName, collectionName, startdate, en
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     print("1.1 Tong so bo dieu tri khoi benh")
     for result in results:
         print(result)
 
 
 # 1,2	Tổng số bò đã điều trị  (Chết):
-def tongSo_boChetCoDieuTri(
-    client: MongoClient, dbName, collectionName, startdate, enddate
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boChetCoDieuTri(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -76,7 +71,7 @@ def tongSo_boChetCoDieuTri(
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     print("1.2 Tong so bo dieu tri chet")
     for result in results:
         print(result)

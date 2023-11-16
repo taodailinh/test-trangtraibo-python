@@ -40,10 +40,6 @@ def testPhanQuyenUser(user, pw, page,excelWriter, trai=1):
     form = driver.find_element(By.CLASS_NAME, "signin-form")
     form.submit()
 
-    chonTrai = Select(
-        driver.find_element(By.XPATH, "/html/body/div[1]/app/nav/ul[1]/select")
-    )
-    chonTrai.select_by_visible_text(danhSachTrai[trai - 1])
 
     script_path = os.path.dirname(os.path.abspath(__file__))
     # print("Current path")
@@ -64,6 +60,9 @@ def testPhanQuyenUser(user, pw, page,excelWriter, trai=1):
         link = row[0].value
         capQuyen = row[trai].value
         print(capQuyen)
+        chonTrai = Select(driver.find_element(By.XPATH, "/html/body/div[1]/app/nav/ul[1]/select"))
+        chonTrai.select_by_visible_text(danhSachTrai[trai - 1])
+        time.sleep(1)
         driver.get(page + link)
         result = ""
         try:

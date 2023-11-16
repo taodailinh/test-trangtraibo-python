@@ -2,6 +2,9 @@ from pymongo import MongoClient
 from datetime import datetime
 import time
 
+from client import db, test_result_collection, changeFarm
+
+
 date_format = "%Y-%m-%d"
 
 startTime = time.time()
@@ -24,11 +27,9 @@ gioiTinhTatCa = {
 }
 
 
-def printAllKetQuaKhamThai(client: MongoClient, databaseName, collectionName):
+def printAllKetQuaKhamThai():
     try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        ketquakhamthai = khamThai.distinct("KetQuaKham")
+        ketquakhamthai = db.khamthai.distinct("KetQuaKham")
         for ketqua in ketquakhamthai:
             print(ketqua)
         return 0
@@ -36,21 +37,17 @@ def printAllKetQuaKhamThai(client: MongoClient, databaseName, collectionName):
         return 1
 
 
-def printAllKetQuaKhamThaiInDateRange(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
-):
+def printAllKetQuaKhamThaiInDateRange(startdate, enddate):
     try:
         startDate = datetime.strptime(startdate, date_format)
         print(startDate)
         endDate = datetime.strptime(enddate, date_format)
         print(endDate)
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        pipline = [
+        pipeline = [
             {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
             {"$group": {"_id": None, "uniketquakham": {"$addToSet": "$KetQuaKham"}}},
         ]
-        ketquakhamthai = khamThai.aggregate(pipline)
+        ketquakhamthai = db.khamthai.aggregate(pipeline)
         for ketqua in ketquakhamthai:
             print(ketqua)
         return 0
@@ -59,12 +56,8 @@ def printAllKetQuaKhamThaiInDateRange(
         return 1
 
 
-def soLuongBoKham(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
-):
+def soLuongBoKham(startdate, enddate):
     try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
         startDate = datetime.strptime(startdate, date_format)
         endDate = datetime.strptime(enddate, date_format)
         pipeline = [
@@ -80,7 +73,7 @@ def soLuongBoKham(
                 }
             },
         ]
-        soLuongBoKhamThai = khamThai.aggregate(pipeline)
+        soLuongBoKhamThai = db.khamthai.aggregate(pipeline)
         for bo in soLuongBoKhamThai:
             print("Số lượng bò:" + str(bo.get("total")))
         print("end")
@@ -89,12 +82,8 @@ def soLuongBoKham(
         return 1
 
 
-def soLuongBoKhamPhoiLan1(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
-):
+def soLuongBoKhamPhoiLan1(startdate, enddate):
     try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
         date_format = "%Y-%m-%d"
         startDate = datetime.strptime(startdate, date_format)
         endDate = datetime.strptime(enddate, date_format)
@@ -131,7 +120,7 @@ def soLuongBoKhamPhoiLan1(
                 }
             },
         ]
-        soLuongBoKhamThai = khamThai.aggregate(pipeline)
+        soLuongBoKhamThai = db.khamthai.aggregate(pipeline)
         for bo in soLuongBoKhamThai:
             print("Số lượng bò:" + str(bo.get("total")))
         return 0
@@ -141,9 +130,7 @@ def soLuongBoKhamPhoiLan1(
 
 
 # Lấy danh sách bò có lần phối cuối cùng thỏa mãn điều kiện
-def boPhoiLan1(client: MongoClient, databaseName, collectionName):
-    db = client[databaseName]
-    danBo = db[collectionName]
+def boPhoiLan1():
     startDate = datetime(2023, 9, 1)
     endDate = datetime(2023, 9, 18)
     pipeline = [
@@ -166,25 +153,19 @@ def boPhoiLan1(client: MongoClient, databaseName, collectionName):
         # project ra document
         {"$project": {"_id": 0, "$count": "TongSoLuong"}},
     ]
-    results = danBo.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     for result in results:
         print(result)
 
 
 # Tong so bo theo nhom
 def thongTinDan_tongSoBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
     nhomphanloai,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -226,7 +207,7 @@ def thongTinDan_tongSoBo(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -238,155 +219,141 @@ def thongTinDan_tongSoBo(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
-# Tổng số bò theo nghiệp vụ
-def nghiepVu_tongSoBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
-    nghiepVu,
-    startdate,
-    enddate,
-    excelWriter,
-    nhomphanloai,
-    loaingay,
-    field1,
-    criteria,
-    gioitinh=gioiTinhTatCa,
-    nhombo=tatCaNhomBo,
-):
-    db = client[dbName]
-    col = db[collectionName]
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    pipeline = []
-    if nhomphanloai["tennhom"]=="":
-        pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {loaingay: {"$gte": startDate, "$lte": endDate}},
-                    {field1:criteria}
-                ]
-            }
-        },
-        {
-            "$match": {
-                "$and": [
-                    {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
-                    {"Bo.GioiTinhBe": {"$in": gioitinh["danhsach"]}},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-                "danhsachsotai": {"$push": "$Bo.SoTai"},
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "soLuong": 1,
-                "danhsachsotaijoined": {
-                    "$reduce": {
-                        "input": "$danhsachsotai",
-                        "initialValue": "",
-                        "in": {
-                            "$concat": [
-                                "$$value",
-                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
-                            ]
-                        },
-                    }
-                },
-            }
-        },
-    ]
-    else:
-        pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {loaingay: {"$gte": startDate, "$lte": endDate}},
-                    {field1:criteria}
-                ]
-            }
-        },
-        {
-            "$match": {
-                "$and": [
-                    {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
-                    {"Bo.PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
-                    {"Bo.GioiTinhBe": {"$in": gioitinh["danhsach"]}},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soLuong": {"$count": {}},
-                "danhsachsotai": {"$push": "$Bo.SoTai"},
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "soLuong": 1,
-                "danhsachsotaijoined": {
-                    "$reduce": {
-                        "input": "$danhsachsotai",
-                        "initialValue": "",
-                        "in": {
-                            "$concat": [
-                                "$$value",
-                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
-                            ]
-                        },
-                    }
-                },
-            }
-        },
-    ]
-    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
-    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = col.aggregate(pipeline)
-    reportName = (
-        "Số lượng "
-        + nhombo["tennhom"]
-        + " "
-        + " - "
-        + (nhomphanloai["tennhom"])
-        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
-        + (" " + nghiepVu)
-    )
-    print(reportName)
-    for result in results:
-        print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
+# # Tổng số bò theo nghiệp vụ
+# def nghiepVu_tongSoBo(
+#     nghiepVu,
+#     startdate,
+#     enddate,
+#     nhomphanloai,
+#     loaingay,
+#     field1,
+#     criteria,
+#     gioitinh=gioiTinhTatCa,
+#     nhombo=tatCaNhomBo,
+# ):
+#     startDate = datetime.strptime(startdate, date_format)
+#     endDate = datetime.strptime(enddate, date_format)
+#     pipeline = []
+#     if nhomphanloai["tennhom"]=="":
+#         pipeline = [
+#         {
+#             "$match": {
+#                 "$and": [
+#                     {loaingay: {"$gte": startDate, "$lte": endDate}},
+#                     {field1:criteria}
+#                 ]
+#             }
+#         },
+#         {
+#             "$match": {
+#                 "$and": [
+#                     {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
+#                     {"Bo.GioiTinhBe": {"$in": gioitinh["danhsach"]}},
+#                 ]
+#             }
+#         },
+#         {
+#             "$group": {
+#                 "_id": "null",
+#                 "soLuong": {"$count": {}},
+#                 "danhsachsotai": {"$push": "$Bo.SoTai"},
+#             }
+#         },
+#         {
+#             "$project": {
+#                 "_id": 0,
+#                 "soLuong": 1,
+#                 "danhsachsotaijoined": {
+#                     "$reduce": {
+#                         "input": "$danhsachsotai",
+#                         "initialValue": "",
+#                         "in": {
+#                             "$concat": [
+#                                 "$$value",
+#                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+#                                 "$$this",
+#                             ]
+#                         },
+#                     }
+#                 },
+#             }
+#         },
+#     ]
+#     else:
+#         pipeline = [
+#         {
+#             "$match": {
+#                 "$and": [
+#                     {loaingay: {"$gte": startDate, "$lte": endDate}},
+#                     {field1:criteria}
+#                 ]
+#             }
+#         },
+#         {
+#             "$match": {
+#                 "$and": [
+#                     {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
+#                     {"Bo.PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
+#                     {"Bo.GioiTinhBe": {"$in": gioitinh["danhsach"]}},
+#                 ]
+#             }
+#         },
+#         {
+#             "$group": {
+#                 "_id": "null",
+#                 "soLuong": {"$count": {}},
+#                 "danhsachsotai": {"$push": "$Bo.SoTai"},
+#             }
+#         },
+#         {
+#             "$project": {
+#                 "_id": 0,
+#                 "soLuong": 1,
+#                 "danhsachsotaijoined": {
+#                     "$reduce": {
+#                         "input": "$danhsachsotai",
+#                         "initialValue": "",
+#                         "in": {
+#                             "$concat": [
+#                                 "$$value",
+#                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+#                                 "$$this",
+#                             ]
+#                         },
+#                     }
+#                 },
+#             }
+#         },
+#     ]
+#     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+#     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+#     results = col.aggregate(pipeline)
+#     reportName = (
+#         "Số lượng "
+#         + nhombo["tennhom"]
+#         + " "
+#         + " - "
+#         + (nhomphanloai["tennhom"])
+#         + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+#         + (" " + nghiepVu)
+#     )
+#     print(reportName)
+#     for result in results:
+#         print("   Số lượng:" + str(result["soLuong"]))
+#         row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
+#         excelWriter.append(row)
 
 
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 def tongSoBoThanhLy_BoDucGiong(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     nhomphanloai,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -430,7 +397,7 @@ def tongSoBoThanhLy_BoDucGiong(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = col.aggregate(pipeline)
+    results = db.thanhly.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -443,27 +410,19 @@ def tongSoBoThanhLy_BoDucGiong(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 2	Bò không đủ tiêu chuẩn xử lý sinh sản
 
 # Tổng số bò xử lý sinh sản theo ngày
 def tongSo_XLSS(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     ngayxuly,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     lieuTrinh = {"0":-1,"7":-2,"9":-3,"10":-4}
@@ -503,7 +462,7 @@ def tongSo_XLSS(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = col.aggregate(pipeline)
+    results = db.xlss.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -516,7 +475,6 @@ def tongSo_XLSS(
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
         row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 # 3	Tổng số bò được xử lý hormone sinh sản ngày 0
 # 4	Tổng số bò được xử lý hormone sinh sản 7
@@ -525,18 +483,12 @@ def tongSo_XLSS(
 
 # 7	Tổng số bò được gieo tinh nhân tạo từ bò lên giống tự nhiên (không xử lý sinh sản)
 def tongSo_phoiGiongTuNhien_ver1(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 3*24*60*60*1000
@@ -584,7 +536,7 @@ def tongSo_phoiGiongTuNhien_ver1(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.phoigiong.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -596,10 +548,9 @@ def tongSo_phoiGiongTuNhien_ver1(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
+
 
 def tongSo_phoiGiongTuNhien_ver2(
     client: MongoClient,
@@ -757,18 +708,12 @@ def tongSo_phoiGiongTuNhien_ver3(
     print("tong thoi gian: " + str(finishTime - startTime))
 
 def tongSo_phoiGiongTuNhien(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 3*24*60*60*1000
@@ -822,7 +767,7 @@ def tongSo_phoiGiongTuNhien(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.phoigiong.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -834,17 +779,12 @@ def tongSo_phoiGiongTuNhien(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 
 #work and fast
 def tongSo_phoiGiongSauXLSS(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
@@ -852,8 +792,6 @@ def tongSo_phoiGiongSauXLSS(
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 3*24*60*60*1000
@@ -907,7 +845,7 @@ def tongSo_phoiGiongSauXLSS(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.phoigiong.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -931,18 +869,12 @@ def tongSo_phoiGiongSauXLSS(
 # 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
 # 10	Tổng số bò xử lý sinh sản có thai
 def tongSo_coThai_sauXLSS(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -997,7 +929,7 @@ def tongSo_coThai_sauXLSS(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1009,25 +941,17 @@ def tongSo_coThai_sauXLSS(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 # 11	Tổng số bò xử lý sinh sản không có thai
 def tongSo_khongThai_sauXLSS(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1081,7 +1005,7 @@ def tongSo_khongThai_sauXLSS(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1093,25 +1017,17 @@ def tongSo_khongThai_sauXLSS(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
 def tongSo_coThai_sauPhoi_tuNhien(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1180,7 +1096,7 @@ def tongSo_coThai_sauPhoi_tuNhien(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1192,25 +1108,17 @@ def tongSo_coThai_sauPhoi_tuNhien(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
 def tongSo_khongThai_sauPhoi_tuNhien(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1279,7 +1187,7 @@ def tongSo_khongThai_sauPhoi_tuNhien(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1291,25 +1199,17 @@ def tongSo_khongThai_sauPhoi_tuNhien(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 # 14	Tổng số bò ghép đực được khám thai
 def tongSo_duocKhamThai_sauGhepDuc(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1368,7 +1268,7 @@ def tongSo_duocKhamThai_sauGhepDuc(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1380,25 +1280,18 @@ def tongSo_duocKhamThai_sauGhepDuc(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
+
 # 15	Tổng số bò ghép đực có thai
 def tongSo_coThai_sauGhepDuc(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1458,7 +1351,7 @@ def tongSo_coThai_sauGhepDuc(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1470,25 +1363,17 @@ def tongSo_coThai_sauGhepDuc(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 # 16	Tổng số bò ghép đực không có thai
 def tongSo_khongThai_sauGhepDuc(
-    client: MongoClient,
-    dbName,
-    collectionName,
     nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1548,7 +1433,7 @@ def tongSo_khongThai_sauGhepDuc(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.khamthai.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -1560,26 +1445,17 @@ def tongSo_khongThai_sauGhepDuc(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 #Tỷ lệ đậu thai
 def tyLe_DauThai_theoLanPhoi(
-    client: MongoClient,
-    dbName,
-    collectionName,
-    nghiepVu,
     startdate,
     enddate,
-    excelWriter,
     lanPhoi,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1638,7 +1514,7 @@ def tyLe_DauThai_theoLanPhoi(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results_coThai = col.aggregate(pipeline)
+    results_coThai = db.khamthai.aggregate(pipeline)
     title1 = (
         "Số lượng "
         + " bò phối lần "
@@ -1651,8 +1527,6 @@ def tyLe_DauThai_theoLanPhoi(
     soLuongCoThai = 0
     for result in results_coThai:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [title1, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         soLuongCoThai = result["soLuong"]
     print(soLuongCoThai)
     #pipeline tính số lượng bò phối được khám thai
@@ -1709,7 +1583,7 @@ def tyLe_DauThai_theoLanPhoi(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results_duocKhamThai = col.aggregate(pipeline)
+    results_duocKhamThai = db.khamthai.aggregate(pipeline)
     title2 = (
         "Số lượng "
         + "bò phối lần "
@@ -1722,8 +1596,6 @@ def tyLe_DauThai_theoLanPhoi(
     soLuongKhamThai = 0
     for result in results_duocKhamThai:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [title1, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         soLuongKhamThai = result["soLuong"]
     print(soLuongKhamThai)
     if soLuongKhamThai == 0:
@@ -1740,19 +1612,13 @@ def tyLe_DauThai_theoLanPhoi(
 # 19	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 3
 
 def tyLe_DauThai_theoLanPhoi_theoGiongBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
     lanPhoi,
     giongBo,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1812,7 +1678,7 @@ def tyLe_DauThai_theoLanPhoi_theoGiongBo(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results_coThai = col.aggregate(pipeline)
+    results_coThai = db.khamthai.aggregate(pipeline)
     title1 = (
         "Số lượng "
         + " bò phối lần "
@@ -1825,8 +1691,6 @@ def tyLe_DauThai_theoLanPhoi_theoGiongBo(
     soLuongCoThai = 0
     for result in results_coThai:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [title1, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         soLuongCoThai = result["soLuong"]
     print(soLuongCoThai)
     #pipeline tính số lượng bò phối được khám thai
@@ -1884,7 +1748,7 @@ def tyLe_DauThai_theoLanPhoi_theoGiongBo(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results_duocKhamThai = col.aggregate(pipeline)
+    results_duocKhamThai = db.khamthai.aggregate(pipeline)
     title2 = (
         "Số lượng "
         + "bò phối lần "
@@ -1897,8 +1761,6 @@ def tyLe_DauThai_theoLanPhoi_theoGiongBo(
     soLuongKhamThai = 0
     for result in results_duocKhamThai:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [title1, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         soLuongKhamThai = result["soLuong"]
     if soLuongKhamThai == 0:
         print("khong co bo duoc kham thai")
@@ -1913,16 +1775,10 @@ def tyLe_DauThai_theoLanPhoi_theoGiongBo(
 # 22	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 3
 # 23	Tỷ lệ đậu thai do ghép đực của giống bò Brahman
 def tyLe_DauThai_ghepDuc_theoGiongBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
     giongBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     khungChenhLech = 90*24*60*60*1000
@@ -1981,7 +1837,7 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results_coThai = col.aggregate(pipeline)
+    results_coThai = db.khamthai.aggregate(pipeline)
     title1 = (
         "Số lượng "
         + " bò ghép đực "
@@ -1993,8 +1849,6 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
     soLuongCoThai = 0
     for result in results_coThai:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [title1, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         soLuongCoThai = result["soLuong"]
     print(soLuongCoThai)
     #pipeline tính số lượng bò phối được khám thai
@@ -2051,7 +1905,7 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results_duocKhamThai = col.aggregate(pipeline)
+    results_duocKhamThai = db.khamthai.aggregate(pipeline)
     title2 = (
         "Số lượng "
         + "bò ghép đực"
@@ -2065,7 +1919,6 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
         print("   Số lượng:" + str(result["soLuong"]))
         row = [title1, result["soLuong"]]
         
-        excelWriter.append(row)
         soLuongKhamThai = result["soLuong"]
     if soLuongKhamThai == 0:
         print("khong co bo duoc kham thai")
@@ -2093,18 +1946,12 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(
 # 39	Tỷ lệ đậu thai do ghép đực của giống bò BBB :
 
 def tuoiPhoiGiongLanDau_theoGiongBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
     giongbo,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -2151,7 +1998,7 @@ def tuoiPhoiGiongLanDau_theoGiongBo(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.phoigiong.aggregate(pipeline)
     reportName = (
         "Ngày tuổi bình quân của lần phối đầu của giống bò"+" "+giongbo
     )
@@ -2160,23 +2007,16 @@ def tuoiPhoiGiongLanDau_theoGiongBo(
         print("   Số lượng:" + str(result["soLuong"]))
         row = [reportName, result["chenhlech"], result["danhsachsotaijoined"]]
         print(str(result["chenhlech"])/(60*60*1000))
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 
 def tuoiPhoiGiongLanDau_theoGiongBo_ver1(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
     giongbo,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -2224,15 +2064,13 @@ def tuoiPhoiGiongLanDau_theoGiongBo_ver1(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.phoigiong.aggregate(pipeline)
     reportName = (
         "Ngày tuổi bình quân của lần phối đầu của giống bò "+giongbo
     )
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         if result["ngaytuoitrungbinh"] != None:
             print(str(result["ngaytuoitrungbinh"]/(24*60*60*1000)))
             print(result["danhsachsotaijoined"])
@@ -2247,18 +2085,12 @@ def tuoiPhoiGiongLanDau_theoGiongBo_ver1(
 
 # Test khoảng cách giữa 2 lứa đẻ bình quân
 def khoangCachGiua2LuaDe(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
     giongbo,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -2318,7 +2150,7 @@ def khoangCachGiua2LuaDe(
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
     startTime = time.time()
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     reportName = (
         "Chênh lệch bình quân giữa 2 lứa đẻ giống bò "+giongbo
     )
@@ -2326,8 +2158,6 @@ def khoangCachGiua2LuaDe(
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
         print("   Chênh lệch ngày đẻ bình quân giữa các lứa đẻ:" + str(result["songaydebinhquan"]))
-        row = [reportName, result["songaydebinhquan"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))    
 

@@ -1,7 +1,9 @@
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 from openpyxl import Workbook
+
+from client import db, test_result_collection, changeFarm
 
 date_format = "%Y-%m-%d"
 
@@ -44,11 +46,9 @@ tatCaPhanLoai = {"tennhom":"","danhsach":["BoMoiPhoi",
 # db = client["quanlytrangtrai_0910"]
 
 
-def printAllKetQuaKhamThai(client: MongoClient, databaseName, collectionName):
+def printAllKetQuaKhamThai():
     try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
-        ketquakhamthai = khamThai.distinct("KetQuaKham")
+        ketquakhamthai = db.khamthai.distinct("KetQuaKham")
         for ketqua in ketquakhamthai:
             print(ketqua)
         return 0
@@ -56,21 +56,18 @@ def printAllKetQuaKhamThai(client: MongoClient, databaseName, collectionName):
         return 1
 
 
-def printAllKetQuaKhamThaiInDateRange(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
+def printAllKetQuaKhamThaiInDateRange(startdate, enddate
 ):
     try:
         startDate = datetime.strptime(startdate, date_format)
         print(startDate)
         endDate = datetime.strptime(enddate, date_format)
         print(endDate)
-        db = client[databaseName]
-        khamThai = db[collectionName]
         pipline = [
             {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
             {"$group": {"_id": None, "uniketquakham": {"$addToSet": "$KetQuaKham"}}},
         ]
-        ketquakhamthai = khamThai.aggregate(pipline)
+        ketquakhamthai = db.khamthai.aggregate(pipline)
         for ketqua in ketquakhamthai:
             print(ketqua)
         return 0
@@ -79,14 +76,11 @@ def printAllKetQuaKhamThaiInDateRange(
         return 1
 
 
-def soLuongBoKham(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
+def soLuongBoKham(startdate, enddate
 ):
     try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
         startDate = datetime.strptime(startdate, date_format)
-        endDate = datetime.strptime(enddate, date_format)
+        endDate = datetime.strptime(enddate, date_format) + timedelta(days = 1)
         pipeline = [
             {
                 "$match": {
@@ -100,7 +94,7 @@ def soLuongBoKham(
                 }
             },
         ]
-        soLuongBoKhamThai = khamThai.aggregate(pipeline)
+        soLuongBoKhamThai = db.khamthai.aggregate(pipeline)
         for bo in soLuongBoKhamThai:
             print("Số lượng bò:" + str(bo.get("total")))
         print("end")
@@ -109,14 +103,11 @@ def soLuongBoKham(
         return 1
 
 
-def soLuongBoKhamPhoiLan1(
-    client: MongoClient, databaseName, collectionName, startdate, enddate
+def soLuongBoKhamPhoiLan1(startdate, enddate
 ):
     try:
-        db = client[databaseName]
-        khamThai = db[collectionName]
         startDate = datetime.strptime(startdate, date_format)
-        endDate = datetime.strptime(enddate, date_format)
+        endDate = datetime.strptime(enddate, date_format) + timedelta(days = 1)
         pipeline = [
             {
                 "$lookup": {
@@ -150,7 +141,7 @@ def soLuongBoKhamPhoiLan1(
                 }
             },
         ]
-        soLuongBoKhamThai = khamThai.aggregate(pipeline)
+        soLuongBoKhamThai = db.khamthai.aggregate(pipeline)
         for bo in soLuongBoKhamThai:
             print("Số lượng bò:" + str(bo.get("total")))
         return 0
@@ -159,43 +150,11 @@ def soLuongBoKhamPhoiLan1(
         return 1
 
 
-# Lấy danh sách bò có lần phối cuối cùng thỏa mãn điều kiện
-def boPhoiLan1(client: MongoClient, databaseName, collectionName):
-    db = client[databaseName]
-    danBo = db[collectionName]
-    startDate = datetime(2023, 9, 1)
-    endDate = datetime(2023, 9, 18)
-    pipeline = [
-        # Giới hạn ngày giờ
-        {
-            "$match": {
-                "$NgayThucHien": {
-                    "$gte": startDate,
-                    "$lte": endDate,
-                },
-                "$LanPhoi": 1,
-            }
-        },
-        # group lại
-        {
-            "$group": {
-                "_id": "$SoTai",
-            }
-        },
-        # project ra document
-        {"$project": {"_id": 0, "$count": "TongSoLuong"}},
-    ]
-    results = danBo.aggregate(pipeline)
-    for result in results:
-        print(result)
-
 
 # 0 Be duoi 100 ngay
 
 
-def beDuoi100Ngay(client: MongoClient, dbName, collectionName, danhsachnhombo):
-    db = client[dbName]
-    col = db[collectionName]
+def beDuoi100Ngay(danhsachnhombo):
     pipeline = [
         {"$match": {"NhomBo": "Be"}},
         {
@@ -218,7 +177,7 @@ def beDuoi100Ngay(client: MongoClient, dbName, collectionName, danhsachnhombo):
         },
         {"$limit": 100},
     ]
-    danhsachbo = col.aggregate(pipeline)
+    danhsachbo = db.bonhaptrai.aggregate(pipeline)
     for bo in danhsachbo:
         print(bo)
 
@@ -226,12 +185,7 @@ def beDuoi100Ngay(client: MongoClient, dbName, collectionName, danhsachnhombo):
 # 1	Tổng số bò chờ phối, bo giai doan bo cho phoi va bo
 
 
-def soBoChoPhoi(
-    client: MongoClient, dbName, collectionName="BoNhapTrai"
-):
-    test_result_col = client["Linh_Test"]["BaoCaoThang"]
-    db = client[dbName]
-    col = db[collectionName]
+def soBoChoPhoi():
     pipeline = [
         {"$match":  {"NhomBo": "Bo"}},
         {
@@ -252,30 +206,31 @@ def soBoChoPhoi(
             }
         }}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     for result in results:
         if result != None:
             test_result = {
-                "LoaiBaoCao":"PhoiGiong",
+                "LoaiBaoCao":"ThongTinDan",
                 "NoiDung":"Tổng số bò chờ phối (chưa loại trừ phiếu thú y)",
+                "CreatedAt":datetime.now(),
                 "SoLuong":result["soluong"],
                 "NgayBaoCao":datetime.now(),
                 "DanhSachSoTai":result["danhsachsotaijoined"]
             }
-            test_result_col.insert_one(test_result)
-        print(result["soluong"])
+            test_result_collection.baocaothang.insert_one(test_result)
+        print("1. Tổng số lượng bò chờ phối: "+str(result["soluong"]))
 
 
 # 2	Tổng số bò mang thai từ 2-7 tháng
-def soBoMangThaiNho(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
+def soBoMangThaiNho(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
     pipeline = [
         {"$match": {"NhomBo": "Bo"}},
+        # Trước thời điểm kiểm tra thì khám thai (có thai) hoặc phối giống
+
+        # & Sau thời điểm kiểm tra là khám thai (có thai) hoặc đẻ
+        # & lần phối gần nhất cách thời điểm kiểm tra không quá 210 ngày
         {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
         {
             "$match": {"PhanLoaiBo": "BoMangThaiNho"},
@@ -283,19 +238,26 @@ def soBoMangThaiNho(
         {"$group": {"_id": "null", "BoMangThaiNho": {"$count": {}}}},
         {"$project": {"_id": 0, "BoMangThaiNho": 1}},
     ]
-    danhsachbo = col.aggregate(pipeline)
-    for bo in danhsachbo:
-        print(bo)
+    results = db.bonhaptrai.aggregate(pipeline)
+    for result in results:
+        if result != None:
+            test_result = {
+                "LoaiBaoCao":"ThongTinDan",
+                "NoiDung":"Tổng số bò mang thai nhỏ",
+                "CreatedAt":datetime.now(),
+                "SoLuong":result["soluong"],
+                "NgayBaoCao":datetime.now(),
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.insert_one(test_result)
+        print("1. Tổng số lượng bò chờ phối: "+str(result["soluong"]))
 
 
 # 3	Tổng số bò mang thai, chờ đẻ từ 8-9 tháng
-def soBoMangThaiLonChoDe(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
+def soBoMangThaiLonChoDe( danhsachnhombo, startdate, enddate
 ):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
     pipeline = [
         {"$match": {"NhomBo": "Bo"}},
         {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
@@ -305,19 +267,15 @@ def soBoMangThaiLonChoDe(
         {"$group": {"_id": "null", "BoMangThaiLonChoDe": {"$count": {}}}},
         {"$project": {"_id": 0, "BoMangThaiLonChoDe": 1}},
     ]
-    danhsachbo = col.aggregate(pipeline)
+    danhsachbo = db.bonhaptrai.aggregate(pipeline)
     for bo in danhsachbo:
         print(bo)
 
 
 # 4	Tổng số bò mẹ nuôi con từ 0 - 1 tháng
-def soBoNuoiConNho(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
+def soBoNuoiConNho(danhsachnhombo, startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
     pipeline = [
         {"$match": {"NhomBo": "Bo"}},
         {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
@@ -327,19 +285,15 @@ def soBoNuoiConNho(
         {"$group": {"_id": "null", "BoNuoiConNho": {"$count": {}}}},
         {"$project": {"_id": 0, "BoNuoiConNho": 1}},
     ]
-    danhsachbo = col.aggregate(pipeline)
+    danhsachbo = db.bonhaptrai.aggregate(pipeline)
     for bo in danhsachbo:
         print(bo)
 
 
 # 5	Tổng số bò mẹ nuôi con từ ≥ 1 - 4 tháng
-def soBoNuoiConLon(
-    client: MongoClient, dbName, collectionName, danhsachnhombo, startdate, enddate
-):
+def soBoNuoiConLon(danhsachnhombo, startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
-    db = client[dbName]
-    col = db[collectionName]
     pipeline = [
         {"$match": {"NhomBo": "Bo"}},
         {"$project": {"SoTai": 1, "PhanLoaiBo": 1}},
@@ -349,7 +303,7 @@ def soBoNuoiConLon(
         {"$group": {"_id": "null", "BoMeNuoiConLon": {"$count": {}}}},
         {"$project": {"_id": 0, "BoMeNuoiConLon": 1}},
     ]
-    danhsachbo = col.aggregate(pipeline)
+    danhsachbo = db.bonhaptrai.aggregate(pipeline)
     for bo in danhsachbo:
         print(bo)
 
@@ -357,9 +311,7 @@ def soBoNuoiConLon(
 # 6	Trọng lượng bình quân của bê cái cai sữa
 
 
-def trongLuongBinhQuan_beCaiCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def trongLuongBinhQuan_beCaiCaiSua():
     pipeline = [
         {
             "$match": {
@@ -380,7 +332,7 @@ def trongLuongBinhQuan_beCaiCaiSua(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1, "tongTrong": 1, "trongLuongBinhQuan": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("6. Trong luong binh quan be cai cai sua")
     for result in results:
         print(result)
@@ -389,9 +341,7 @@ def trongLuongBinhQuan_beCaiCaiSua(client: MongoClient, dbName, collectionName):
 # 7	Trọng lượng bình quân của bê đực cai sữa
 
 
-def trongLuongBinhQuan_beDucCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def trongLuongBinhQuan_beDucCaiSua():
     pipeline = [
         {
             "$match": {
@@ -412,16 +362,14 @@ def trongLuongBinhQuan_beDucCaiSua(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1, "tongTrong": 1, "trongLuongBinhQuan": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("7. Trong luong binh quan be đực cai sua")
     for result in results:
         print(result)
 
 
 # 8	Tổng số bê cái cai sữa ≥ 4- 8 tháng
-def tongSo_beCaiCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_beCaiCaiSua():
     pipeline = [
         {
             "$match": {
@@ -440,16 +388,14 @@ def tongSo_beCaiCaiSua(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("8. Số lượng bê cái cai sữa")
     for result in results:
         print(result)
 
 
 # 9	Tổng số bê đực cai sữa ≥ 4- 8 tháng
-def tongSo_beDucCaiSua(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_beDucCaiSua():
     pipeline = [
         {
             "$match": {
@@ -468,17 +414,15 @@ def tongSo_beDucCaiSua(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("9. Số lượng bê đực cai sữa")
     for result in results:
         print(result)
 
 
 # 10	Tổng số bê cái hậu bị 9- 12 tháng
-def tongSo_beCaiHauBi(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
-    pipeline = [
+def tongSo_beCaiHauBi():
+        pipeline = [
         {
             "$match": {
                 "$and": [
@@ -496,16 +440,14 @@ def tongSo_beCaiHauBi(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
-    print("10. Số lượng bê cái hậu bị")
-    for result in results:
-        print(result)
+        results = db.bonhaptrai.aggregate(pipeline)
+        print("10. Số lượng bê cái hậu bị")
+        for result in results:
+            print(result)
 
 
 # 11	Tổng số bê đực hậu bị 9- 12 tháng
-def tongSo_beDucHauBi(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_beDucHauBi():
     pipeline = [
         {
             "$match": {
@@ -524,16 +466,14 @@ def tongSo_beDucHauBi(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("10. Số lượng bê đực hậu bị")
     for result in results:
         print(result)
 
 
 # 12	Tổng số bê đực nuôi thịt BCT bị 9- 12 tháng
-def tongSo_beDucNuoiThit_9_12(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_beDucNuoiThit_9_12():
     pipeline = [
         {
             "$match": {
@@ -552,16 +492,14 @@ def tongSo_beDucNuoiThit_9_12(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("12. Số lượng bê đực nuoi thit BCT")
     for result in results:
         print(result)
 
 
 # 13	Tổng số bê cái nuôi thịt BCT bị 9- 12 tháng
-def tongSo_beCaiNuoiThit_9_12(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_beCaiNuoiThit_9_12():
     pipeline = [
         {
             "$match": {
@@ -580,16 +518,14 @@ def tongSo_beCaiNuoiThit_9_12(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("13. Số lượng bê cái nuoi thit BCT")
     for result in results:
         print(result)
 
 
 # 14	Tổng số bò cái hậu bị BCT 13-18 tháng
-def tongSo_boCaiHauBiChoPhoi(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boCaiHauBiChoPhoi():
     pipeline = [
         {
             "$match": {
@@ -608,16 +544,14 @@ def tongSo_boCaiHauBiChoPhoi(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("14. Số lượng bò cái hậu bị 13-18 thang")
     for result in results:
         print(result)
 
 
 # 15	Tổng số bò đực hậu bị BCT 13-18 tháng
-def tongSo_boDucHauBi_13_18(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDucHauBi_13_18():
     pipeline = [
         {
             "$match": {
@@ -636,7 +570,7 @@ def tongSo_boDucHauBi_13_18(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("15. Số lượng bò đực hậu bị 13-18 thang")
     for result in results:
         print(result)
@@ -649,9 +583,7 @@ def tongSo_boDucHauBi_13_18(client: MongoClient, dbName, collectionName):
 
 
 # 18	Tổng số bò vỗ béo nhỏ
-def tongSo_boVoBeoNho(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boVoBeoNho():
     pipeline = [
         {
             "$match": {
@@ -669,7 +601,7 @@ def tongSo_boVoBeoNho(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("18. Số lượng bo vo beo nho")
     for result in results:
         print(result)
@@ -713,9 +645,7 @@ def tangTrongBinhQuan_boVoBeoNho(client: MongoClient, dbName, collectionName):
 
 
 # 20	Tổng số bò vỗ béo trung
-def tongSo_boVoBeoTrung(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boVoBeoTrung():
     pipeline = [
         {
             "$match": {
@@ -733,7 +663,7 @@ def tongSo_boVoBeoTrung(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("20. Số lượng bo vo beo trung")
     for result in results:
         print(result)
@@ -741,9 +671,7 @@ def tongSo_boVoBeoTrung(client: MongoClient, dbName, collectionName):
 
 # 21	Tăng trọng bình quân của BVB trung
 # 22	Tổng số bò vỗ béo lớn
-def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boVoBeoLon():
     pipeline = [
         {
             "$match": {
@@ -761,7 +689,7 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName):
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("22. Số lượng bo vo beo lon")
     for result in results:
         print(result)
@@ -769,9 +697,7 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName):
 
 # 21	Tăng trọng bình quân của BVB trung
 # 22	Tổng số bò vỗ béo lớn
-def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName, startDate, endDate):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boVoBeoLon(startDate, endDate):
     pipeline = [
         {
             "$match": {
@@ -789,7 +715,7 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName, startDate, en
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("22. Số lượng bo vo beo lon")
     for result in results:
         print(result)
@@ -797,13 +723,9 @@ def tongSo_boVoBeoLon(client: MongoClient, dbName, collectionName, startDate, en
 
 # 23	Tăng trọng bình quân của BVB lớn
 # 24	Tổng số bò sinh sản nhập trại
-def tongSo_nhapTrai_boSinhSan(
-    client: MongoClient, dbName, collectionName, startdate, enddate
-):
+def tongSo_nhapTrai_boSinhSan(startdate, enddate):
     ngaySinhMacDinh = datetime.strptime("2022-01-01", date_format)
     ngayTuoiToiThieu = 240 * 1000 * 60 * 60 * 24
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -835,16 +757,14 @@ def tongSo_nhapTrai_boSinhSan(
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("24. So luong bo sinh san nhap trai")
     for result in results:
         print(result)
 
 
 # 25	Tổng số bê nhập trại
-def tongSo_nhapTrai_be(client: MongoClient, dbName, collectionName, startdate, enddate):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_nhapTrai_be(startdate, enddate):
     ngayTuoiToiDa = 240 * 1000 * 60 * 60 * 24
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
@@ -868,16 +788,14 @@ def tongSo_nhapTrai_be(client: MongoClient, dbName, collectionName, startdate, e
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("25. So luong be nhap trai")
     for result in results:
         print(result)
 
 
 # 26	Tổng số bê sinh ra
-def tongSo_beSinh(client: MongoClient, dbName, collectionName, startdate, enddate):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_beSinh(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -898,16 +816,14 @@ def tongSo_beSinh(client: MongoClient, dbName, collectionName, startdate, enddat
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("26. So luong be duoc sinh ra")
     for result in results:
         print(result)
 
 
 # 27	Tổng số bê chết
-def tongSo_chet_be(client: MongoClient, dbName, collectionName, startdate, enddate):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_chet_be(startdate, enddate):
     ngayTuoiToiDa = 240 * 1000 * 60 * 60 * 24
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
@@ -931,7 +847,7 @@ def tongSo_chet_be(client: MongoClient, dbName, collectionName, startdate, endda
         },
         {"$project": {"_id": 0, "soLuong": 1}},
     ]
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     print("27. So luong be chet")
     for result in results:
         print(result)

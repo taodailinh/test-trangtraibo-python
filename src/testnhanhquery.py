@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import testnhanh.query as query
 import constants
+import client
+from client import db, test_result_collection, changeFarm
 from pymongo import MongoClient
 from openpyxl import Workbook
 
@@ -13,9 +15,9 @@ startDate = "2023-09-01"
 endDate = "2023-09-30"
 
 # Connect to mongodb
-client = MongoClient(constants.CONNECTION_STRING)
+# client = MongoClient(constants.CONNECTION_STRING)
 # client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
-db = constants.DB
+# db = constants.DB
 
 # Create workbook log
 # wb = Workbook()
@@ -92,9 +94,22 @@ lanPhoi3 = {"min":3,"max":999}
 
 # query.danhsachbe(client,db,"BoNhapTrai",startDate,endDate,ws,nhombo=nhombovabe)
 # query.tinh_tongsobobe(client,db,"BoNhapTrai",startDate,endDate,ws)
-query.lichsuchuyenchuong(client,db,"ChuChuyenDan","MTC433")
+# query.lichsuchuyenchuong(client,db,"ChuChuyenDan","MTC433")
 # fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 # wb.save(fileName)
 
+print(db.bonhaptrai)
+print(db.bonhaptrai.count_documents({}))
+print(test_result_collection.baocaothang.count_documents({}))
+
+print("Đổi trại")
+#Đổi trại
+changeFarm(1)
+
+print(db.bonhaptrai)
+print(db.bonhaptrai.count_documents({}))
+print(test_result_collection.baocaothang.count_documents({}))
+
+
 # Close mongo connection
-client.close()
+# client.close()

@@ -89,88 +89,86 @@ lanPhoi1 = {"min":1,"max":1}
 lanPhoi2 = {"min":2,"max":2}
 lanPhoi3 = {"min":3,"max":999}
 
-"""
+
 
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
-phoiGiong.tongSoBoThanhLy_BoDucGiong(
-    client, db, "ThanhLyBo", "thanh lý", startDate, endDate, ws, boDucGiong
-)
+phoiGiong.tongSoBoThanhLy_BoDucGiong("thanh lý", startDate, endDate, boDucGiong)
 
 # 2	Bò không đủ tiêu chuẩn xử lý sinh sản
-phoiGiong.nghiepVu_tongSoBo(client,db,"KhamSinhSan","khám sinh sản không đạt tiêu chuẩn",startDate,endDate,ws,tatCaPhanLoai,"NgayKham","DatTieuChuanPhoi",False)
+phoiGiong.nghiepVu_tongSoBo("khám sinh sản không đạt tiêu chuẩn",startDate,endDate,tatCaPhanLoai,"NgayKham","DatTieuChuanPhoi",False)
 
 # 3	Tổng số bò được xử lý hormone sinh sản ngày 0
-phoiGiong.tongSo_XLSS(client,db,"XuLySinhSan","xử lý sinh sản ngày 0",startDate,endDate,ws,"0")
+phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 0",startDate,endDate,"0")
 
 # 4	Tổng số bò được xử lý hormone sinh sản 7
-phoiGiong.tongSo_XLSS(client,db,"XuLySinhSan","xử lý sinh sản ngày 7",startDate,endDate,ws,"7")
+phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 7",startDate,endDate,"7")
 
 # 5	Tổng số bò được xử lý hormone sinh sản 9
-phoiGiong.tongSo_XLSS(client,db,"XuLySinhSan","xử lý sinh sản ngày 9",startDate,endDate,ws,"9")
+phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 9",startDate,endDate,"9")
 
 # 6	Tổng số bò được xử lý hormone sinh sản 10
-phoiGiong.tongSo_XLSS(client,db,"XuLySinhSan","xử lý sinh sản ngày 10",startDate,endDate,ws,"10")
+phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 10",startDate,endDate,"10")
 
 # 7	Tổng số bò được gieo tinh nhân tạo từ bò lên giống tự nhiên (không xử lý sinh sản)
-phoiGiong.tongSo_phoiGiongTuNhien(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
+phoiGiong.tongSo_phoiGiongTuNhien("phối giống tự nhiên",startDate,endDate)
 
 # phoiGiong.tongSo_phoiGiongTuNhien_ver2(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
 # phoiGiong.tongSo_phoiGiongTuNhien_ver3(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
-phoiGiong.tongSo_phoiGiongSauXLSS(client,db,"ThongTinPhoiGiong","phối giống sau khi xlss",startDate,endDate,ws)
+phoiGiong.tongSo_phoiGiongSauXLSS("phối giống sau khi xlss",startDate,endDate)
 
 
 # 8	Tổng số bò được ghép đôi phối giống với bò đực giống
-phoiGiong.nghiepVu_tongSoBo(client,db,"ThongTinPhoiGiong","về đực không qua phối",startDate,endDate,ws,tatCaPhanLoai,"NgayGhepDuc","GhepDucKhongQuaPhoi",True)
+phoiGiong.nghiepVu_tongSoBo("về đực không qua phối",startDate,endDate,tatCaPhanLoai,"NgayGhepDuc","GhepDucKhongQuaPhoi",True)
 
-phoiGiong.nghiepVu_tongSoBo(client,db,"ThongTinPhoiGiong","về đực sau phối",startDate,endDate,ws,tatCaPhanLoai,"NgayGhepDuc","GhepDuc",True)
+phoiGiong.nghiepVu_tongSoBo("về đực sau phối",startDate,endDate,tatCaPhanLoai,"NgayGhepDuc","GhepDuc",True)
 
 # 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
 # 10	Tổng số bò xử lý sinh sản có thai
-phoiGiong.tongSo_coThai_sauXLSS(client,db,"KhamThai","có thai có xlss",startDate,endDate,ws)
+phoiGiong.tongSo_coThai_sauXLSS("có thai có xlss",startDate,endDate)
 
 # 11	Tổng số bò xử lý sinh sản không có thai
-phoiGiong.tongSo_khongThai_sauXLSS(client,db,"KhamThai","không thai có xlss",startDate,endDate,ws)
+phoiGiong.tongSo_khongThai_sauXLSS("không thai có xlss",startDate,endDate)
 
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
-phoiGiong.tongSo_coThai_sauPhoi_tuNhien(client,db,"KhamThai","lên giống tự nhiên được gieo tinh nhân tạo có thai",startDate,endDate,ws)
+phoiGiong.tongSo_coThai_sauPhoi_tuNhien("lên giống tự nhiên được gieo tinh nhân tạo có thai",startDate,endDate)
 
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
-phoiGiong.tongSo_khongThai_sauPhoi_tuNhien(client,db,"KhamThai","lên giống tự nhiên được gieo tinh nhân tạo không thai",startDate,endDate,ws)
+phoiGiong.tongSo_khongThai_sauPhoi_tuNhien("lên giống tự nhiên được gieo tinh nhân tạo không thai",startDate,endDate)
 
 # 14	Tổng số bò ghép đực được khám thai
-phoiGiong.tongSo_duocKhamThai_sauGhepDuc(client,db,"KhamThai","được khám thai sau khi ghép đực",startDate,endDate,ws)
+phoiGiong.tongSo_duocKhamThai_sauGhepDuc("được khám thai sau khi ghép đực",startDate,endDate)
 
 
 # 15	Tổng số bò ghép đực có thai
-phoiGiong.tongSo_coThai_sauGhepDuc(client,db,"KhamThai","có thai sau khi ghép đực",startDate,endDate,ws)
+phoiGiong.tongSo_coThai_sauGhepDuc("có thai sau khi ghép đực",startDate,endDate)
 
 # 16	Tổng số bò ghép đực không có thai
-phoiGiong.tongSo_khongThai_sauGhepDuc(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws)
+phoiGiong.tongSo_khongThai_sauGhepDuc("không thai sau khi ghép đực",startDate,endDate)
 
 # 17	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 1
-phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi1)
+phoiGiong.tyLe_DauThai_theoLanPhoi("không thai sau khi ghép đực",startDate,endDate,lanPhoi1)
 
 # 18	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 2
-phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi2)
+phoiGiong.tyLe_DauThai_theoLanPhoi("không thai sau khi ghép đực",startDate,endDate,lanPhoi2)
 
 # 19	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 3
-phoiGiong.tyLe_DauThai_theoLanPhoi(client,db,"KhamThai","không thai sau khi ghép đực",startDate,endDate,ws,lanPhoi3)
+phoiGiong.tyLe_DauThai_theoLanPhoi("không thai sau khi ghép đực",startDate,endDate,lanPhoi3)
 for bo in giongBo:
 # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 1
-    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi1,bo)
+    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(startDate,endDate,lanPhoi1,bo)
 # 21	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 2
-    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi2,bo)
+    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(startDate,endDate,lanPhoi2,bo)
 
 # 22	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Brahman lần 3
-    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,lanPhoi3,bo)
+    phoiGiong.tyLe_DauThai_theoLanPhoi_theoGiongBo(startDate,endDate,lanPhoi3,bo)
 
 # 23	Tỷ lệ đậu thai do ghép đực của giống bò Brahman
-    phoiGiong.tyLe_DauThai_ghepDuc_theoGiongBo(client,db,"KhamThai",startDate,endDate,ws,bo)
+    phoiGiong.tyLe_DauThai_ghepDuc_theoGiongBo(startDate,endDate,bo)
 
-    phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo_ver1(client,db,"ThongTinPhoiGiong",startDate,endDate,ws,bo,)
+    phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo_ver1(startDate,endDate,bo,)
 
 
 # 24	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 1
@@ -190,8 +188,8 @@ for bo in giongBo:
 # 38	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò BBB lần 3:
 # 39	Tỷ lệ đậu thai do ghép đực của giống bò BBB :
 # 40	Tuổi phối giống lần đầu của giống bò Brahman
-# phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo(client,db,"ThongTinPhoiGiong",startDate,endDate,ws,"Brahman",)
-"""
+phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo(startDate,endDate,"Brahman",)
+
 
 # 41	Tuổi phối giống lần đầu của giống bò Drougth master
 # 42	Tuổi phối giống lần đầu của giống bò Angus
@@ -200,7 +198,7 @@ for bo in giongBo:
 
 
 # 45	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Brahman
-phoiGiong.khoangCachGiua2LuaDe(client,db,"BoNhapTrai",startDate,endDate,ws,"Brahman")
+phoiGiong.khoangCachGiua2LuaDe(startDate,endDate,"Brahman")
 # 46	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Drougth master
 # 47	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Angus
 # 48	Khoảng cách giữa 2 lứa đẻ bình quân của giống bò Charolair

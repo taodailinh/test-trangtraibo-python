@@ -78,11 +78,7 @@ def tongSo_boChetCoDieuTri(startdate, enddate):
 
 
 # 1,3	Tổng số bò mắc bệnh đã đề nghị bán thanh lý
-def tongSo_boDaDeXuatThanhLy(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDeXuatThanhLy(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -121,24 +117,18 @@ def tongSo_boDaDeXuatThanhLy(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.thanhly.aggregate(pipeline)
     reportName = "1.3 Tong so bo da de xuat thanh ly"
     print(reportName)
     for result in results:
         print(result)
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # Tổng số bò vỗ béo đã và đang điều trị
 
 
 # 2,1	Tổng số bò vỗ béo nhỏ đã và đang điều trị
-def tongSo_boDaDangDieuTri_boVoBeoNho(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boVoBeoNho(startdate, enddate,):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -178,21 +168,15 @@ def tongSo_boDaDangDieuTri_boVoBeoNho(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "2.1 Tong so bo vo beo nho da va dang dieu tri"
     print(reportName)
     for result in results:
         print(result)
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 2,2	Tổng số bò vỗ béo trung đã và đang điều trị
-def tongSo_boDaDangDieuTri_boVoBeoTrung(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boVoBeoTrung(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -232,21 +216,15 @@ def tongSo_boDaDangDieuTri_boVoBeoTrung(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "2.2 Tong so bo vo beo trung da va dang dieu tri"
     print(reportName)
     for result in results:
         print(result)
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 2,3	Tổng số bò vỗ béo lớn đã và đang điều trị
-def tongSo_boDaDangDieuTri_boVoBeoLon(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boVoBeoLon(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -286,21 +264,15 @@ def tongSo_boDaDangDieuTri_boVoBeoLon(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "2.3 Tong so bo vo beo lon da va dang dieu tri"
     print(reportName)
     for result in results:
         print(result)
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 2,5	Tổng số bò vỗ béo đã điều trị Khỏi bệnh
-def tongSo_boKhoiBenh_boVoBeo(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boKhoiBenh_boVoBeo(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -341,21 +313,15 @@ def tongSo_boKhoiBenh_boVoBeo(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "2.5 Tổng số bò vỗ béo đã điều trị Khỏi bệnh"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 2,6	Tổng số bò vỗ béo đã điều trị không khỏi bệnh
-def tongSo_boKhongKhoiBenh_boVoBeo(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boKhongKhoiBenh_boVoBeo(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -405,21 +371,15 @@ def tongSo_boKhongKhoiBenh_boVoBeo(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "2.6 Tổng số bò vỗ béo đã điều trị không khỏi bệnh"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 2,7	Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý
-def tongSo_boDaDeXuatThanhLy_boVoBeo(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDeXuatThanhLy_boVoBeo(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -459,22 +419,16 @@ def tongSo_boDaDeXuatThanhLy_boVoBeo(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.thanhly.aggregate(pipeline)
     reportName = "2.7 Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # Tổng số bò sinh sản đã và đang điều trị
 # 3,1	Tổng số bò chờ phối đang điều trị
-def tongSo_boDaDangDieuTri_boChoPhoi(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boChoPhoi(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -514,21 +468,14 @@ def tongSo_boDaDangDieuTri_boChoPhoi(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.1 Tổng số bò chờ phối đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
-
 
 # 3,2	Tổng số bò mang thai 2-7 tháng đã và đang điều trị
-def tongSo_boDaDangDieuTri_boMangThaiNho(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boMangThaiNho(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -568,21 +515,15 @@ def tongSo_boDaDangDieuTri_boMangThaiNho(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = bo.dieutri.aggregate(pipeline)
     reportName = "3.2 Tổng số bò mang thai 2-7 tháng đã và đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 3,3	Tổng số bò mang thai 8-9 tháng đã và đang điều trị
-def tongSo_boDaDangDieuTri_boMangThaiLon(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boMangThaiLon(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -622,21 +563,15 @@ def tongSo_boDaDangDieuTri_boMangThaiLon(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.3 Tổng số bò mang thai 8-9 tháng đã và đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 3,4	Tổng số bò nuôi con 0-1 tháng đã và đang điều trị
-def tongSo_boDaDangDieuTri_boNuoiConNho(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boNuoiConNho(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -676,21 +611,15 @@ def tongSo_boDaDangDieuTri_boNuoiConNho(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.4 Tổng số bò nuôi con 0-1 tháng đã và đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 3,5	Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị
-def tongSo_boDaDangDieuTri_boNuoiConLon(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boNuoiConLon(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -730,21 +659,15 @@ def tongSo_boDaDangDieuTri_boNuoiConLon(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.5 Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 3,6	Tổng số bò hậu bị  9-12 tháng đã và đang điều trị
-def tongSo_boDaDangDieuTri_boHauBi(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
-):
-    db = client[dbName]
-    col = db[collectionName]
+def tongSo_boDaDangDieuTri_boHauBi(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -784,21 +707,15 @@ def tongSo_boDaDangDieuTri_boHauBi(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.6 Tổng số bò hậu bị 9-12 tháng đã và đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
-
 
 # 3,7	Tổng số bò hậu bị  13-18 tháng đã và đang điều trị
-def tongSo_boDaDangDieuTri_boHauBiChoPhoi(
-    client: MongoClient, dbName, collectionName, startdate, enddate, excelWriter
+def tongSo_boDaDangDieuTri_boHauBiChoPhoi(startdate, enddate
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -838,13 +755,11 @@ def tongSo_boDaDangDieuTri_boHauBiChoPhoi(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.7 Tổng số bò hậu bị 13-18 tháng đã và đang điều trị"
     print(reportName)
     for result in results:
         print("   so luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
@@ -859,20 +774,13 @@ def tongSo_boDaDangDieuTri_boHauBiChoPhoi(
 
 
 # 5,1	Tổng số bê giống Brahman từ 0-1 tháng tuổi mắc bệnh
-def tongSo_boDaDangDieuTri_theoGiongBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
-    startdate,
+def tongSo_boDaDangDieuTri_theoGiongBo(startdate,
     enddate,
-    excelWriter,
     giongbo,
     nhomphanloai,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format)
     pipeline = [
@@ -917,7 +825,7 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = col.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = (
         "Số lượng "
         + nhombo["tennhom"]
@@ -931,8 +839,6 @@ def tongSo_boDaDangDieuTri_theoGiongBo(
     print(reportName)
     for result in results:
         print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
 
 
 # 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh

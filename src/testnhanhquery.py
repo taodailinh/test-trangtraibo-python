@@ -97,18 +97,18 @@ lanPhoi3 = {"min":3,"max":999}
 # query.lichsuchuyenchuong(client,db,"ChuChuyenDan","MTC433")
 # fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 # wb.save(fileName)
+current_moment = datetime.now()
+result = test_result_collection.baocaothang.insert_one({
+    "CreatedAt":current_moment,
+    "NoiDung":"Test tạo một document",
+    "Array":[]
+})
 
-print(db.bonhaptrai)
-print(db.bonhaptrai.count_documents({}))
-print(test_result_collection.baocaothang.count_documents({}))
+newDocId = result.inserted_id
 
-print("Đổi trại")
-#Đổi trại
-changeFarm(1)
+test_result_collection.baocaothang.update_one({"_id":newDocId},{"$push":{"Array":{"Content":"content","CreatedAt":datetime.now()}}})
 
-print(db.bonhaptrai)
-print(db.bonhaptrai.count_documents({}))
-print(test_result_collection.baocaothang.count_documents({}))
+print("updated successfully")
 
 
 # Close mongo connection

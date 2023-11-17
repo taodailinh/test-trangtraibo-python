@@ -15,6 +15,8 @@ class DB:
         self.xlss = traibo_db["XuLySinhSan"+constants.TENANTS[trai]]
         self.phoigiong = traibo_db["ThongTinPhoiGiong"+constants.TENANTS[trai]]
         self.dieutri = traibo_db["DieuTriBoBenh"+constants.TENANTS[trai]]
+        self.vaccine = traibo_db["ThongTinTiemVaccine"+constants.TENANTS[trai]]
+        self.lieutrinhvaccine = traibo_db["LieuTrinhVaccine"+constants.TENANTS[trai]]
 
     # Đổi trại
     def changeFarm(self,trai):

@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 import time
 import constants
+from client import db, test_result_collection
 
 date_format = "%Y-%m-%d"
 
@@ -27,13 +28,7 @@ gioiTinhTatCa = {
 
 
 # 1	Tổng số bò đã được tiêm vaccine
-def tongSo_boDuocTiemVaccine(
-    client: MongoClient, nhomVaccine
-):
-    test_result_db = client[constants.TEST_RESULT_DB]
-    test_result_col = test_result_db[constants.TEST_RESULT_COL_BAOCAOTHANG]
-    db = client[constants.DB]
-    col = db[constants.DB_COL_TIEMVACCINE]
+def tongSo_boDuocTiemVaccine(nhomVaccine):
     startDate = datetime.strptime(constants.START_DATE, date_format)
     endDate = datetime.strptime(constants.END_DATE, date_format)+timedelta(days=1)
     pipeline = [
@@ -73,7 +68,7 @@ def tongSo_boDuocTiemVaccine(
             }
         },
     ]
-    results = col.aggregate(pipeline)
+    results = db.vaccine.aggregate(pipeline)
     reportName = "Tổng số bò được tiêm vaccine "+nhomVaccine["ma"]
     print(reportName)
     for result in results:
@@ -93,16 +88,7 @@ def tongSo_boDuocTiemVaccine(
 
 
 # 2. Tổng số bò đủ điều kiện tiêm vaccine (trừ tụ huyết trùng)
-def tongSo_boDuDieuKienTiem(
-    client: MongoClient, dbName, bonhaptrai, tiemVaccineCollection, nhomVaccineCollection, lieutrinhVaccineCollection, workingDate, excelWriter,nhomVaccine
-,nhombo = tatCaNhomBoSong):
-    db = client[dbName]
-    bo = db[bonhaptrai]
-    test_result_db = client["Linh_Test"]
-    test_result_col = test_result_db["BaoCaoThang"]
-    tiemCol = db[tiemVaccineCollection]
-    nhomVacCol = db[nhomVaccineCollection]
-    lieutrinhCol = db[lieutrinhVaccineCollection]
+def tongSo_boDuDieuKienTiem(workingDate,nhomVaccine,nhombo = tatCaNhomBoSong):
     dateToCheck = datetime.strptime(workingDate, date_format)+timedelta(days=1)
 
     print(nhomVaccine["ma"])
@@ -123,7 +109,7 @@ def tongSo_boDuDieuKienTiem(
     chukytiem = 0
     danhsachngaylieutrinh = []
 
-    lieutrinhresult = lieutrinhCol.aggregate(pipelineLieuTrinh)
+    lieutrinhresult = db.lieutrinhvaccine.aggregate(pipelineLieuTrinh)
 
     for lieutrinh in lieutrinhresult:
         danhsachngaylieutrinh = lieutrinh["ngaytuois"]
@@ -211,13 +197,11 @@ def tongSo_boDuDieuKienTiem(
             }
         },
     ]
-    results = bo.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     reportName = "Tong so luong bo du dieu kien tiem "+nhomVaccine["ma"]
     print(reportName)
     for result in results:
         print("   So luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
         if result != None:    
             test_result = {
                 "LoaiBaoCao":"Vaccine",
@@ -228,18 +212,9 @@ def tongSo_boDuDieuKienTiem(
                 "NgayKiemTra":dateToCheck,
                 "DanhSachSoTai":result["danhsachsotaijoined"]
             }
-            test_result_col.insert_one(test_result)
+            test_result_collection.baocaothang.insert_one(test_result)
 
-def tongSo_boDuDieuKienTiem_THT(
-    client: MongoClient, dbName, bonhaptrai, tiemVaccineCollection, nhomVaccineCollection, lieutrinhVaccineCollection, workingDate, excelWriter, nhomVaccine
-,nhombo = tatCaNhomBoSong):
-    db = client[dbName]
-    bo = db[bonhaptrai]
-    test_result_db = client[constants.TEST_RESULT_DB]
-    test_result_col = test_result_db[constants.TEST_RESULT_COL_BAOCAOTHANG]
-    tiemCol = db[tiemVaccineCollection]
-    nhomVacCol = db[nhomVaccineCollection]
-    lieutrinhCol = db[lieutrinhVaccineCollection]
+def tongSo_boDuDieuKienTiem_THT(workingDate, nhomVaccine,nhombo = tatCaNhomBoSong):
     dateToCheck = datetime.strptime(workingDate, date_format)
 
     print(nhomVaccine["ma"])
@@ -260,7 +235,7 @@ def tongSo_boDuDieuKienTiem_THT(
     chukytiem = 120
     danhsachngaylieutrinh = []
 
-    lieutrinhresult = lieutrinhCol.aggregate(pipelineLieuTrinh)
+    lieutrinhresult = db.lieutrinhvaccine.aggregate(pipelineLieuTrinh)
 
     for lieutrinh in lieutrinhresult:
         danhsachngaylieutrinh = lieutrinh["ngaytuois"]
@@ -365,13 +340,11 @@ def tongSo_boDuDieuKienTiem_THT(
             }
         },
     ]
-    results = bo.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     reportName = "Tong so luong bo du dieu kien tiem "+nhomVaccine["ma"]
     print(reportName)
     for result in results:
         print("   So luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"]]
-        excelWriter.append(row)
         if result != None:
             test_result = {
                 "LoaiBaoCao":"Vaccine",
@@ -382,5 +355,5 @@ def tongSo_boDuDieuKienTiem_THT(
                 "NgayKiemTra":dateToCheck,
                 "DanhSachSoTai":result["danhsachsotaijoined"]
             }
-            test_result_col.insert_one(test_result)
+            test_result_collection.baocaothang.insert_one(test_result)
 

@@ -107,9 +107,9 @@ vaccinethongke = ["UKT",
 
 for loaivaccine in vaccinethongke:
     # vaccine.tongSo_boDuocTiemVaccine(client,db,"ThongTinTiemVaccine",startDate,endDate,ws,nhomVaccine[loaivaccine])
-    vaccine.tongSo_boDuDieuKienTiem(client,db,"BoNhapTrai","ThongTinTiemVaccine","NhomVaccineModel","LieuTrinhVaccine",workingDate,ws,nhomVaccine[loaivaccine])
+    vaccine.tongSo_boDuDieuKienTiem(workingDate,nhomVaccine[loaivaccine])
 
-vaccine.tongSo_boDuDieuKienTiem_THT(client,db,"BoNhapTrai","ThongTinTiemVaccine","NhomVaccineModel","LieuTrinhVaccine",workingDate,ws,nhomVaccine["THT"])
+vaccine.tongSo_boDuDieuKienTiem_THT(workingDate,nhomVaccine["THT"])
 
 
 fileName = "baocaothang_vaccine" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")

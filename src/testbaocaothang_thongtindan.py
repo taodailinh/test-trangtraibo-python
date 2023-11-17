@@ -1,13 +1,10 @@
 from datetime import datetime
-import test_dashboard.query as queryDashBoard
 import test_phanquyen.test_phan_quyen as test_phan_quyen
 import test_baocaothang.phoigiong as phoiGiong
 import test_baocaothang.thongtindan as thongTinDan
 import test_baocaothang.thuy as thuY
 import test_thongtindan.test_nhap_be as nhapBe
 import test_thongtindan.xoabo as xoaBo
-import constants
-from pymongo import MongoClient
 import time
 import os
 from openpyxl import Workbook
@@ -21,13 +18,13 @@ startDate = "2023-09-01"
 endDate = "2023-09-30"
 
 # Connect to mongodb
-client = MongoClient(constants.CONNECTION_STRING)
+# client = MongoClient(constants.CONNECTION_STRING)
 # client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
-db = constants.DB
+# db = constants.DB
 
 # Create workbook log
-wb = Workbook()
-ws = wb.active
+# wb = Workbook()
+# ws = wb.active
 danhsachnhombo = ["XuatBan", "Bo", "Be"]
 
 # Danh sách phân loại bò
@@ -88,165 +85,135 @@ giongBo = [
     "BBB (Blan Blue Belgium)",
 ]
 
-thongTinDan.soBoChoPhoi(client,db)
-"""
 
+
+"""
 # Print current path
 script_path = os.path.dirname(os.path.abspath(__file__))
 print("Current path")
 print(script_path)
-
 # Nhập bê
-nhapBe.nhapbe(client, db, page, user, password)
+nhapBe.nhapbe(page, user, password)
 time.sleep(10)
 # Xóa bê vừa nhập
-xoaBo.xoaBo(client, db, "BoNhapTrai", "F202300609")
+xoaBo.xoaBo("BoNhapTrai", "F202300609")
 
 # Test phân quyền
 test_phan_quyen.testPhanQuyenUser("admin", "admintest", page)
-
-phoiGiong.printAllKetQuaKhamThai(client, db, "ThongTinKhamThai")
+phoiGiong.printAllKetQuaKhamThai()
 
 print("----")
 
-phoiGiong.printAllKetQuaKhamThaiInDateRange(
-    client, db, "KhamThai", "2023-09-01", "2023-09-18"
-)
+phoiGiong.printAllKetQuaKhamThaiInDateRange("2023-09-01", "2023-09-18")
 
-phoiGiong.soLuongBoKham(client, db, "ThongTinKhamThai", "2023-08-01", "2023-09-18")
+
+phoiGiong.soLuongBoKham("2023-08-01", "2023-09-18")
 
 # Test query số bò phối có số lần phối
-phoiGiong.soLuongBoKhamPhoiLan1(
-    client, db, "ThongTinPhoiGiong", "2023-09-01", "2023-09-18"
+phoiGiong.soLuongBoKhamPhoiLan1("2023-09-01", "2023-09-18"
 )
 
 # Danh sach bo it hon 100 ngay tuoi trong cac nhom bo
+"""
 
 
 
 
 # So luong bo cho phoi
-thongTinDan.tongSoBo(
-    client,
-    db,
-    "BoNhapTrai",
-    startDate,
-    endDate,
-    ws,
-    boChoPhoi,
-)
+thongTinDan.tongSoBo(startDate,endDate,"#1",boChoPhoi)
 
 
-# So luong bo mang thai nho
-thongTinDan.tongSoBo(
-    client,
-    db,
-    "BoNhapTrai",
-    startDate,
-    endDate,
-    ws,
-    boMangThaiNho,
-)
+#1. Số bò chờ phối
+thongTinDan.soBoChoPhoi()
 
-# So luong bo mang thai lon cho de
-thongTinDan.tongSoBo(
-    client,
-    db,
-    "BoNhapTrai",
-    startDate,
-    endDate,
-    ws,
-    boMangThaiLonChoDe,
-)
+#2 So luong bo mang thai nho
+thongTinDan.tongSoBo(startDate,endDate,"#2",boMangThaiNho,)
 
-# So luong bo nuoi con nho
-thongTinDan.tongSoBo(
-    client,
-    db,
-    "BoNhapTrai",
-    startDate,
-    endDate,
-    ws,
-    boMeNuoiConNho,
-)
+#3 So luong bo mang thai lon cho de
+thongTinDan.tongSoBo(startDate,endDate,"#3",boMangThaiLonChoDe)
 
-# So luong bo nuoi con lon
+#4 So luong bo nuoi con nho
+thongTinDan.tongSoBo(startDate,endDate,"#4",boMeNuoiConNho)
+
+#5 So luong bo nuoi con lon
 thongTinDan.tongSoBo(
-    client,
-    db,
-    "BoNhapTrai",
     startDate,
     endDate,
-    ws,
+    "#5",
     boMeNuoiConLon,
 )
 
 # Trong luong binh quan be cai cai sua
-thongTinDan.trongLuongBinhQuan_beCaiCaiSua(client, db, "BoNhapTrai")
+thongTinDan.trongLuongBinhQuan_beCaiCaiSua()
 
 # Trong luong binh quan be duc cai sua
-thongTinDan.trongLuongBinhQuan_beDucCaiSua(client, db, "BoNhapTrai")
+thongTinDan.trongLuongBinhQuan_beDucCaiSua()
 
 # Tong so be cai cai sua
 thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, beCaiSua, gioiTinhCai
+    startDate, endDate,"#8",beCaiSua, gioiTinhCai
 )
 
 # Tong so be duc cai sua
-thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, beCaiSua, gioiTinhDuc
+thongTinDan.tongSoBo(startDate, endDate,"#9", beCaiSua, gioiTinhDuc
 )
 
 # 10	Tổng số bê cái hậu bị 9- 12 tháng
-thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, boHauBi, gioiTinhCai
+thongTinDan.tongSoBo(startDate, endDate,"#10", boHauBi, gioiTinhCai
 )
 
 # 11	Tổng số bê đực hậu bị 9- 12 tháng
-thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, boHauBi, gioiTinhDuc
+thongTinDan.tongSoBo(startDate, endDate,"#11", boHauBi, gioiTinhDuc
 )
 
 # 12	Tổng số bê đực nuôi thịt BCT bị 9- 12
 thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, boNuoiThitBCT9_12, gioiTinhDuc
+    startDate, endDate,"#12", boNuoiThitBCT9_12, gioiTinhDuc
 )
 
 
 # 13	Tổng số bê cái nuôi thịt BCT bị 9- 12 tháng
-thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, boNuoiThitBCT9_12, gioiTinhCai
+thongTinDan.tongSoBo( startDate, endDate,"#13", boNuoiThitBCT9_12, gioiTinhCai
 )
 
 # 14	Tổng số bò cái hậu bị BCT 13-18 tháng
-thongTinDan.tongSoBo(
-    client, db, "BoNhapTrai", startDate, endDate, ws, boHauBiChoPhoi, gioiTinhCai
-)
+thongTinDan.tongSoBo(startDate, endDate,"#14", boHauBiChoPhoi, gioiTinhCai)
+
 # 15	Tổng số bò đực hậu bị BCT 13-18 tháng
-thongTinDan.tongSo_boDucHauBi_13_18(client, db, "BoNhapTrai")
+thongTinDan.tongSoBo(startDate, endDate,"#15", boNuoiThitBCT13_18, gioiTinhDuc)
 
 # 16	Tổng số bò đực nuôi thịt BCT 13-18 tháng
+thongTinDan.tongSoBo(startDate, endDate,"#16", boNuoiThitBCT13_18, gioiTinhDuc)
+
 # 17	Tổng số bò cái nuôi thịt BCT 13-18 tháng
+thongTinDan.tongSoBo(startDate, endDate,"#17", boNuoiThitBCT13_18, gioiTinhCai)
+
 # 18	Tổng số bò vỗ béo nhỏ
-thongTinDan.tongSo_boVoBeoNho(client, db, "BoNhapTrai")
+thongTinDan.tongSoBo(startDate, endDate,"#18", boVoBeoNho)
 
 # 19	Tăng trọng bình quân của BVB nhỏ
+
 # 20	Tổng số bò vỗ béo trung
+thongTinDan.tongSoBo(startDate, endDate,"#20", boVoBeoTrung)
+
 # 21	Tăng trọng bình quân của BVB trung
 # 22	Tổng số bò vỗ béo lớn
+thongTinDan.tongSoBo(startDate, endDate,"#22", boVoBeoLon)
+
 # 23	Tăng trọng bình quân của BVB lớn
 # 24	Tổng số bò sinh sản nhập trại
-thongTinDan.tongSo_nhapTrai_boSinhSan(client, db, "BoNhapTrai", startDate, endDate)
+thongTinDan.tongSo_nhapTrai_boSinhSan(startDate, endDate)
+"""
 
 # 25	Tổng số bê nhập trại
-thongTinDan.tongSo_nhapTrai_be(client, db, "BoNhapTrai", startDate, endDate)
+thongTinDan.tongSo_nhapTrai_be(startDate, endDate)
 
 
 # 26	Tổng số bê sinh ra
-thongTinDan.tongSo_beSinh(client, db, "BoNhapTrai", startDate, endDate)
+thongTinDan.tongSo_beSinh(startDate, endDate)
 
 # 27	Tổng số bê chết
-thongTinDan.tongSo_chet_be(client, db, "BoNhapTrai", startDate, endDate)
+thongTinDan.tongSo_chet_be(startDate, endDate)
 
 # 28	Tổng số bò giống xuất bán
 # 29	Tổng số bò vỗ béo xuất bán
@@ -257,72 +224,59 @@ thongTinDan.tongSo_chet_be(client, db, "BoNhapTrai", startDate, endDate)
 # TEST BAO CAO THANG THU Y
 print("-- Test bao cao thu y --")
 # 1,1	Tổng số bò đã điều trị khỏi bệnh
-thuY.tongSo_boKhoiBenh(client, db, "DieuTriBoBenh", startDate, endDate)
+thuY.tongSo_boKhoiBenh(startDate, endDate)
 
 # 1,2	Tổng số bò đã điều trị  (Chết):
-thuY.tongSo_boChetCoDieuTri(client, db, "DieuTriBoBenh", startDate, endDate)
+thuY.tongSo_boChetCoDieuTri(startDate, endDate)
 
 # 1,3	Tổng số bò mắc bệnh đã đề nghị bán thanh lý
-thuY.tongSo_boDaDeXuatThanhLy(client, db, "ThanhLyBo", startDate, endDate, ws)
+thuY.tongSo_boDaDeXuatThanhLy(startDate, endDate)
 
 # Tổng số bò vỗ béo đã và đang điều trị
 # 2,1	Tổng số bò vỗ béo nhỏ đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boVoBeoNho(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
-)
+thuY.tongSo_boDaDangDieuTri_boVoBeoNho(startDate, endDate)
 
 # 2,2	Tổng số bò vỗ béo trung đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boVoBeoTrung(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
-)
+thuY.tongSo_boDaDangDieuTri_boVoBeoTrung(startDate, endDate)
 
 # 2,3	Tổng số bò vỗ béo lớn đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boVoBeoLon(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
-)
+thuY.tongSo_boDaDangDieuTri_boVoBeoLon(startDate, endDate)
 
 # 2,5	Tổng số bò vỗ béo đã điều trị Khỏi bệnh
-thuY.tongSo_boKhoiBenh_boVoBeo(client, db, "DieuTriBoBenh", startDate, endDate, ws)
+thuY.tongSo_boKhoiBenh_boVoBeo(startDate, endDate)
 
 # 2,6	Tổng số bò vỗ béo đã điều trị không khỏi bệnh
-thuY.tongSo_boKhongKhoiBenh_boVoBeo(client, db, "DieuTriBoBenh", startDate, endDate, ws)
+thuY.tongSo_boKhongKhoiBenh_boVoBeo(startDate, endDate)
 
 # 2,7	Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý
-thuY.tongSo_boDaDeXuatThanhLy_boVoBeo(client, db, "ThanhLyBo", startDate, endDate, ws)
+thuY.tongSo_boDaDeXuatThanhLy_boVoBeo(startDate, endDate)
 
 # Tổng số bò sinh sản đã và đang điều trị
 # 3,1	Tổng số bò chờ phối đang điều trị
-thuY.tongSo_boDaDangDieuTri_boChoPhoi(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
-)
+thuY.tongSo_boDaDangDieuTri_boChoPhoi(startDate, endDate)
 
 
 # 3,2	Tổng số bò mang thai 2-7 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boMangThaiNho(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
+thuY.tongSo_boDaDangDieuTri_boMangThaiNho(startDate, endDate
 )
 # 3,3	Tổng số bò mang thai 8-9 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boMangThaiLon(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
+thuY.tongSo_boDaDangDieuTri_boMangThaiLon(startDate, endDate
 )
 
 # 3,4	Tổng số bò nuôi con 0-1 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boNuoiConNho(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
+thuY.tongSo_boDaDangDieuTri_boNuoiConNho(startDate, endDate
 )
 
 # 3,5	Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boNuoiConLon(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
+thuY.tongSo_boDaDangDieuTri_boNuoiConLon(startDate, endDate
 )
 
 # 3,6	Tổng số bò hậu bị  9-12 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boHauBi(client, db, "DieuTriBoBenh", startDate, endDate, ws)
+thuY.tongSo_boDaDangDieuTri_boHauBi(startDate, endDate)
 
 
 # 3,7	Tổng số bò hậu bị  13-18 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(
-    client, db, "DieuTriBoBenh", startDate, endDate, ws
+thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(startDate, endDate
 )
 
 # 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
@@ -339,35 +293,23 @@ thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(
 for bo in giongBo:
     # 5,1	Tổng số bê giống Brahman từ 0-1 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         beDuoi1thang,
     )
     # 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         beTheoMe,
     )
 
     # 5,3	Tổng số bê cái giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         beCaiSua,
         gioiTinhCai,
@@ -375,36 +317,24 @@ for bo in giongBo:
 
     # 5,4	Tổng số bê đực giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         beCaiSua,
         gioiTinhDuc,
     )
     # 5,5	Tổng số bò cái giống Brahman từ 9-12 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         beCaiSua,
         gioiTinhCai,
     )
     # 5,6	Tổng số bò đực giống Brahman từ 9-12 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boNuoiThitBCT9_12,
         gioiTinhDuc,
@@ -412,12 +342,8 @@ for bo in giongBo:
 
     # 5,7	Tổng số bò cái giống Brahman từ 13-18 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boHauBiChoPhoi,
         gioiTinhCai,
@@ -425,12 +351,8 @@ for bo in giongBo:
 
     # 5,8	Tổng số bò đực giống Brahman từ 13-18 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boNuoiThitBCT13_18,
         gioiTinhCai,
@@ -438,71 +360,47 @@ for bo in giongBo:
 
     # 5,9	Tổng số bò giống Brahman chờ phối mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boChoPhoi,
     )
 
     # 5,10	Tổng số bò giống Brahman mang thai 2-7 tháng mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boMangThaiNho,
     )
 
     # 5,11	Tổng số bò giống Brahman mang thai 8-9 tháng mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boMangThaiLon,
     )
     # 5,12	Tổng số bò giống Brahmannuôi con 0-1 tháng mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boMeNuoiConNho,
     )
 
     # 5,13	Tổng số bò giống Brahmannuôi con ≥ 2-4 tháng mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boMeNuoiConLon,
     )
 
     # 5,14	Tổng số bò đực vỗ béo nhỏ giống brahman mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boVoBeoNho,
         gioiTinhDuc,
@@ -510,12 +408,8 @@ for bo in giongBo:
 
     # 5,15	Tổng số bò đực vỗ béo trung giống brahman mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boVoBeoTrung,
         gioiTinhDuc,
@@ -523,12 +417,8 @@ for bo in giongBo:
 
     # 5,16	Tổng số bò đực vỗ béo lớn giống brahman mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        client,
-        db,
-        "DieuTriBoBenh",
         startDate,
         endDate,
-        ws,
         bo,
         boVoBeoLon,
         gioiTinhDuc,
@@ -600,15 +490,13 @@ for bo in giongBo:
 # 5,78	Tổng số bò đực vỗ béo nhỏ giống BBB (Blan Blue Belgium) mắc bệnh
 # 5,79	Tổng số bò đực vỗ béo trung giống BBB (Blan Blue Belgium) mắc bệnh
 # 5,80	Tổng số bò đực vỗ béo lớn giống BBB (Blan Blue Belgium) mắc bệnh
+"""
 
+"""
 # Xuat thong tin dan
-"""
-"""
 for i in range(1,10000):
     print("-- Lan xuat thu "+str(i)+"--")
     thongTinDan.exportThongTinDan(client, db, "BoNhapTrai")
-fileName = "baocaothang_" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
-wb.save(fileName)
 """
+
 # Close mongo connection
-client.close()

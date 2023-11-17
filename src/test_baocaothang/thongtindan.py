@@ -46,6 +46,14 @@ tatCaPhanLoai = {"tennhom":"","danhsach":["BoMoiPhoi",
 # db = client["quanlytrangtrai_0910"]
 
 
+testResultId = test_result_collection.baocaothang.insert_one({
+    "LoaiBaoCao":"ThongTinDan",
+    "CreatedAt":datetime.now(),
+    "KetQua":[]
+}).inserted_id
+
+
+
 def printAllKetQuaKhamThai():
     try:
         ketquakhamthai = db.khamthai.distinct("KetQuaKham")
@@ -138,6 +146,7 @@ def soLuongBoKhamPhoiLan1(startdate, enddate
                 "$group": {
                     "_id": "null",
                     "total": {"$count": {}},
+                    "danhsachsotai": {"$push": "$SoTai"},
                 }
             },
         ]
@@ -189,7 +198,17 @@ def soBoChoPhoi():
     pipeline = [
         {"$match":  {"NhomBo": "Bo"}},
         {
-            "$match": {"PhanLoaiBo": {"$in": ["BoChoPhoi", "BoHauBiChoPhoi"]}},
+            "$match": {"PhanLoaiBo": {"$in": ["BoChoPhoi", "BoHauBiChoPhoi"]},
+            "LichSuDieuTris":{
+                "$not":{
+                    "$elemMatch":{
+                        "TinhTrangDieuTri":{
+                            "$in":["DangDieuTri","DaKham","ChuaKham"]
+                        }
+                    }
+                }
+            }
+            },
         },
         {"$group": {
             "_id": "null", 
@@ -210,14 +229,11 @@ def soBoChoPhoi():
     for result in results:
         if result != None:
             test_result = {
-                "LoaiBaoCao":"ThongTinDan",
-                "NoiDung":"Tổng số bò chờ phối (chưa loại trừ phiếu thú y)",
-                "CreatedAt":datetime.now(),
+                "NoiDung":"#1. Tổng số bò chờ phối (Đã loại trừ bò đang điều trị)",
                 "SoLuong":result["soluong"],
-                "NgayBaoCao":datetime.now(),
                 "DanhSachSoTai":result["danhsachsotaijoined"]
             }
-            test_result_collection.baocaothang.insert_one(test_result)
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
         print("1. Tổng số lượng bò chờ phối: "+str(result["soluong"]))
 
 
@@ -383,15 +399,39 @@ def tongSo_beCaiCaiSua():
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$SoTai"},
             }
         },
-        {"$project": {"_id": 0, "soLuong": 1}},
+        {"$project": {
+            "_id": 0,
+            "soluong": 1,
+            "danhsachsotaijoined": {
+                "$reduce": {
+                    "input": "$danhsachsotai",
+                    "initialValue": "",
+                    "in": {
+                        "$concat": [
+                            "$$value",
+                            {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                            "$$this",
+                            ]
+                        },
+                    }
+                },
+}},
     ]
     results = db.bonhaptrai.aggregate(pipeline)
     print("8. Số lượng bê cái cai sữa")
     for result in results:
-        print(result)
+        if result != None:
+            test_result = {
+                "NoiDung":"8. Số lượng bê cái cai sữa",
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print("8. Số lượng bê cái cai sữa: "+str(result["soluong"]))
 
 
 # 9	Tổng số bê đực cai sữa ≥ 4- 8 tháng
@@ -727,7 +767,7 @@ def tongSo_nhapTrai_boSinhSan(startdate, enddate):
     ngaySinhMacDinh = datetime.strptime("2022-01-01", date_format)
     ngayTuoiToiThieu = 240 * 1000 * 60 * 60 * 24
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
@@ -752,10 +792,28 @@ def tongSo_nhapTrai_boSinhSan(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
+                "danhsachsotai":{"$push":"$SoTai"}
+                
             }
         },
-        {"$project": {"_id": 0, "soLuong": 1}},
+        {"$project": {
+            "_id": 0,
+            "soluong": 1,
+            "danhsachsotaijoined": {
+                "$reduce": {
+                    "input": "$danhsachsotai",
+                    "initialValue": "",
+                    "in": {
+                        "$concat": [
+                            "$$value",
+                            {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                            "$$this",
+                            ]
+                        },
+                    }
+                },
+}},
     ]
     results = db.bonhaptrai.aggregate(pipeline)
     print("24. So luong bo sinh san nhap trai")
@@ -897,20 +955,15 @@ def danhsachdan(client: MongoClient, dbName, collectionName, pageNumber, pageSiz
 
 
 def tongSoBo(
-    client: MongoClient,
-    dbName,
-    collectionName,
     startdate,
     enddate,
-    excelWriter,
+    stt,
     nhomphanloai=tatCaPhanLoai,
     gioitinh=gioiTinhTatCa,
     nhombo=tatCaNhomBo,
 ):
-    db = client[dbName]
-    col = db[collectionName]
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
@@ -924,14 +977,14 @@ def tongSoBo(
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
-                "danhsachsotai": {"$push": "SoTai"},
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -950,9 +1003,10 @@ def tongSoBo(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     reportName = (
-        "Số lượng "
+        stt
+        +". Số lượng "
         + nhombo["tennhom"]
         + " "
         + " - "
@@ -961,18 +1015,21 @@ def tongSoBo(
     )
     print(reportName)
     for result in results:
-        print("   Số lượng:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"], result["danhsachsotaijoined"]]
-        excelWriter.append(row)
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # export thong tin dan
 
 
-def exportThongTinDan(client: MongoClient, dbName, collectionName):
+def exportThongTinDan():
     startTime = time.time()
-    db = client[dbName]
-    col = db[collectionName]
     pipeline = [
         {
             "$match": {
@@ -1000,7 +1057,7 @@ def exportThongTinDan(client: MongoClient, dbName, collectionName):
         },
     ]
     print("bat dau lay du lieu")
-    results = col.aggregate(pipeline)
+    results = db.bonhaptrai.aggregate(pipeline)
     giaiDoanBo = {
         "BoMoiPhoi": "Bò mới phối",
         "BoMangThaiNho": "Bò mang thai nhỏ",

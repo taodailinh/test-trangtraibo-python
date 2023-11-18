@@ -203,7 +203,6 @@ thongTinDan.tongSoBo(startDate, endDate,"#22", boVoBeoLon)
 # 23	Tăng trọng bình quân của BVB lớn
 # 24	Tổng số bò sinh sản nhập trại
 thongTinDan.tongSo_nhapTrai_boSinhSan(startDate, endDate)
-"""
 
 # 25	Tổng số bê nhập trại
 thongTinDan.tongSo_nhapTrai_be(startDate, endDate)
@@ -216,10 +215,19 @@ thongTinDan.tongSo_beSinh(startDate, endDate)
 thongTinDan.tongSo_chet_be(startDate, endDate)
 
 # 28	Tổng số bò giống xuất bán
-# 29	Tổng số bò vỗ béo xuất bán
-# 30	Tổng số bê bệnh đang chờ thanh lý
-# 31	Tổng số bò bệnh đang chờ thanh lý
 
+thongTinDan.tongSo_bogiong_xuatban(startDate,endDate)
+
+# 29	Tổng số bò vỗ béo xuất bán
+thongTinDan.tongSo_bovobeo_xuatban(startDate,endDate)
+
+# 30	Tổng số bê bệnh đang chờ thanh lý
+thongTinDan.tongSo_bebenh_chothanhly(startDate,endDate)
+
+# 31	Tổng số bò bệnh đang chờ thanh lý
+thongTinDan.tongSo_bobenh_chothanhly(startDate,endDate)
+
+"""
 
 # TEST BAO CAO THANG THU Y
 print("-- Test bao cao thu y --")

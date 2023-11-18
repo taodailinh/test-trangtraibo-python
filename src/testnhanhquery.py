@@ -97,19 +97,27 @@ lanPhoi3 = {"min":3,"max":999}
 # query.lichsuchuyenchuong(client,db,"ChuChuyenDan","MTC433")
 # fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 # wb.save(fileName)
-current_moment = datetime.now()
-result = test_result_collection.baocaothang.insert_one({
-    "CreatedAt":current_moment,
-    "NoiDung":"Test tạo một document",
-    "Array":[]
-})
 
-newDocId = result.inserted_id
+results = db.bonhaptrai.aggregate([
+    {"$match":{"SoTai":"BLUE2554"}},
+    {"$project":{
+        "songayduoctao":{
+            "$dateDiff":
+            {
+                "startDate":"$NgayNhap",
+                "endDate":"$CreatedAt",
+                "unit":"day"
+            }
+        }
+    }}
+])
 
-test_result_collection.baocaothang.update_one({"_id":newDocId},{"$push":{"Array":{"Content":"content","CreatedAt":datetime.now()}}})
+for result in results:
+    print(result["songayduoctao"])
 
-print("updated successfully")
+results = db.bonhaptrai.find({"NhomBo":{"$nin":["Bo","Be","XuatBan","LoaiThai","BeChet"]}})
 
-
+for result in results:
+    print(result["SoTai"])
 # Close mongo connection
 # client.close()

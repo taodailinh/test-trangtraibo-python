@@ -12,3 +12,87 @@ END_DATE = "2023-10-31"
 
 TENANTS = ["","_1","_2","_3","_4"]
 
+giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
+
+BOCHOPHOI = ["BoChoPhoi", "BoHauBiChoPhoi"]
+
+TATCANHOMBO = {
+    "tennhom": "bò",
+    "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be", None],
+}
+
+TATCAGIOITINH = {
+    "tennhom": "",
+    "danhsach": ["Đực", "Cái", "Không xác định", None, ""],
+}
+
+TATCAPHANLOAI = {"tennhom":"","danhsach":["BoMoiPhoi",
+        "BoMangThaiNho",
+        "BoChoPhoi",
+        "BoXuLySinhSan",
+        "BoMeNuoiConNho",
+        "BoChoDe",
+        "BoMangThaiLon",
+        "BoMeNuoiConLon",
+        "BoVoBeoNho",
+        "BoVoBeoTrung",
+        "BoVoBeoLon",
+        "BoHauBiChoPhoi",
+        "BoNuoiThitBCT",
+        "BoHauBi",
+        "BoNuoiThitBCT8_12",
+        "BeCaiSua",
+        "BeTheoMe",
+        "BeSinh",
+        "BoCachLy",
+        "",
+]}
+
+TATCAPHANLOAI = {"tennhom":"","danhsach":["BoMoiPhoi",
+        "BoMangThaiNho",
+        "BoChoPhoi",
+        "BoXuLySinhSan",
+        "BoMeNuoiConNho",
+        "BoChoDe",
+        "BoMangThaiLon",
+        "BoMeNuoiConLon",
+        "BoHauBiChoPhoi",
+        "BoHauBi",
+]}
+
+
+BE = {"tennhom":"bê","danhsach":[
+        "BeCaiSua",
+        "BeTheoMe",
+        "BeSinh",
+]}
+
+
+BOGIONG  = {"tennhom":"bò giống","danhsach":["BoMoiPhoi",
+        "BoMangThaiNho",
+        "BoChoPhoi",
+        "BoXuLySinhSan",
+        "BoMeNuoiConNho",
+        "BoChoDe",
+        "BoMangThaiLon",
+        "BoMeNuoiConLon",
+        "BoHauBiChoPhoi",
+        "BoHauBi",
+        "BeCaiSua",
+        "BeTheoMe",
+        "BeSinh",
+]}
+
+BOVOBEO = {"tennhom":"bò vỗ béo","danhsach":[
+        "BoVoBeoNho",
+        "BoVoBeoTrung",
+        "BoVoBeoLon",
+        "BoNuoiThitBCT",
+        "BoNuoiThitBCT8_12",
+]}
+
+
+DANGDIEUTRI = {
+    "tennhom":"đang điều trị",
+    "danhsach":["ChuaKham","DangDieuTri","DaKham"]
+}

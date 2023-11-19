@@ -92,38 +92,38 @@ lanPhoi3 = {"min":3,"max":999}
 
 
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
-phoiGiong.tongSoBoThanhLy_BoDucGiong("thanh lý", startDate, endDate, boDucGiong)
+phoiGiong.tongSoBoThanhLy_BoDucGiong(startDate, endDate, boDucGiong)
 
 # 2	Bò không đủ tiêu chuẩn xử lý sinh sản
-phoiGiong.nghiepVu_tongSoBo("khám sinh sản không đạt tiêu chuẩn",startDate,endDate,tatCaPhanLoai,"NgayKham","DatTieuChuanPhoi",False)
+
 
 # 3	Tổng số bò được xử lý hormone sinh sản ngày 0
-phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 0",startDate,endDate,"0")
+phoiGiong.tongSo_XLSS(startDate,endDate,"0")
 
 # 4	Tổng số bò được xử lý hormone sinh sản 7
-phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 7",startDate,endDate,"7")
+phoiGiong.tongSo_XLSS(startDate,endDate,"7")
 
 # 5	Tổng số bò được xử lý hormone sinh sản 9
-phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 9",startDate,endDate,"9")
+phoiGiong.tongSo_XLSS(startDate,endDate,"9")
 
 # 6	Tổng số bò được xử lý hormone sinh sản 10
-phoiGiong.tongSo_XLSS("xử lý sinh sản ngày 10",startDate,endDate,"10")
+phoiGiong.tongSo_XLSS(startDate,endDate,"10")
 
 # 7	Tổng số bò được gieo tinh nhân tạo từ bò lên giống tự nhiên (không xử lý sinh sản)
-phoiGiong.tongSo_phoiGiongTuNhien("phối giống tự nhiên",startDate,endDate)
+phoiGiong.tongSo_phoiGiongTuNhien(startDate,endDate)
 
 # phoiGiong.tongSo_phoiGiongTuNhien_ver2(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
 # phoiGiong.tongSo_phoiGiongTuNhien_ver3(client,db,"ThongTinPhoiGiong","phối giống tự nhiên",startDate,endDate,ws)
 
-phoiGiong.tongSo_phoiGiongSauXLSS("phối giống sau khi xlss",startDate,endDate)
+phoiGiong.tongSo_phoiGiongXLSS(startDate,endDate)
 
 
 # 8	Tổng số bò được ghép đôi phối giống với bò đực giống
 phoiGiong.nghiepVu_tongSoBo("về đực không qua phối",startDate,endDate,tatCaPhanLoai,"NgayGhepDuc","GhepDucKhongQuaPhoi",True)
 
 phoiGiong.nghiepVu_tongSoBo("về đực sau phối",startDate,endDate,tatCaPhanLoai,"NgayGhepDuc","GhepDuc",True)
-
+"""
 # 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
 # 10	Tổng số bò xử lý sinh sản có thai
 phoiGiong.tongSo_coThai_sauXLSS("có thai có xlss",startDate,endDate)
@@ -133,7 +133,7 @@ phoiGiong.tongSo_khongThai_sauXLSS("không thai có xlss",startDate,endDate)
 
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
 phoiGiong.tongSo_coThai_sauPhoi_tuNhien("lên giống tự nhiên được gieo tinh nhân tạo có thai",startDate,endDate)
-
+"""
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
 phoiGiong.tongSo_khongThai_sauPhoi_tuNhien("lên giống tự nhiên được gieo tinh nhân tạo không thai",startDate,endDate)

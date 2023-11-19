@@ -1,7 +1,8 @@
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 from client import db, test_result_collection
+import constants
 
 date_format = "%Y-%m-%d"
 
@@ -22,85 +23,126 @@ gioiTinhTatCa = {
 }
 
 
+testResultId = test_result_collection.baocaothang.insert_one({
+    "LoaiBaoCao":"ThuY",
+    "CreatedAt":datetime.now(),
+    "KetQua":[]
+}).inserted_id
+
+
 # 1,1	Tổng số bò đã điều trị khỏi bệnh
 def tongSo_boKhoiBenh(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"TinhTrangDieuTri": "KhoiBenh"},
-                    {"NgayKetThucDieuTri": {"$gte": startDate, "$lte": endDate}},
+                    {"NgayKetThucDieuTri": {"$gte": startDate, "$lt": endDate}},
                 ]
             }
         },
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
+                "danhsachsotai":{"$push":"$Bo.SoTai"}
+
             }
         },
-        {"$project": {"_id": 0, "soLuong": 1}},
+        {"$project": {"_id": 0, "soluong": 1,"danhsachsotaijoined":{
+            "$reduce":{
+                "input":"$danhsachsotai",
+                "initialValue":"",
+                "in":{
+                    "$concat":["$$value",{"$cond":[{"$eq":["$$value",""]},"",";"]},"$$this"]
+                }
+            }
+        }}},
     ]
     results = db.dieutri.aggregate(pipeline)
-    print("1.1 Tong so bo dieu tri khoi benh")
+    reportName = "1.1 Tổng số bò điều trị khỏi bệnh"
     for result in results:
-        print(result)
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "soluong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # 1,2	Tổng số bò đã điều trị  (Chết):
 def tongSo_boChetCoDieuTri(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"TinhTrangDieuTri": "Chet"},
                     {"NgayKetThucDieuTri": {"$ne": None}},
-                    {"NgayKetThucDieuTri": {"$gte": startDate, "$lte": endDate}},
+                    {"NgayKetThucDieuTri": {"$gte": startDate, "$lt": endDate}},
                 ]
             }
         },
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
+                "danhsachsotai":{"$push":"$Bo.SoTai"}
+
             }
         },
-        {"$project": {"_id": 0, "soLuong": 1}},
+        {"$project": {"_id": 0, "soluong": 1,"danhsachsotaijoined":{
+            "$reduce":{
+                "input":"$danhsachsotai",
+                "initialValue":"",
+                "in":{
+                    "$concat":["$$value",{"$cond":[{"$eq":["$$value",""]},"",";"]},"$$this"]
+                }
+            }
+        }}},
     ]
     results = db.dieutri.aggregate(pipeline)
-    print("1.2 Tong so bo dieu tri chet")
+    reportName = "1.2 Tổng số bò điều trị chết"
     for result in results:
-        print(result)
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "soluong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # 1,3	Tổng số bò mắc bệnh đã đề nghị bán thanh lý
 def tongSo_boDaDeXuatThanhLy(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"HinhThucThanhLy": "DeXuatThanhLy"},
-                    {"NgayDeXuat": {"$gte": startDate, "$lte": endDate}},
+                    {"NgayDeXuat": {"$gte": startDate, "$lt": endDate}},
                 ]
             }
         },
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -119,10 +161,15 @@ def tongSo_boDaDeXuatThanhLy(startdate, enddate):
     ]
     results = db.thanhly.aggregate(pipeline)
     reportName = "1.3 Tong so bo da de xuat thanh ly"
-    print(reportName)
     for result in results:
-        print(result)
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "soluong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # Tổng số bò vỗ béo đã và đang điều trị
 
@@ -130,28 +177,43 @@ def tongSo_boDaDeXuatThanhLy(startdate, enddate):
 # 2,1	Tổng số bò vỗ béo nhỏ đã và đang điều trị
 def tongSo_boDaDangDieuTri_boVoBeoNho(startdate, enddate,):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
-            "$match": {
-                "$and": [
-                    {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
-                    {"Bo.PhanLoaiBo": "BoVoBeoNho"},
+            "$match":{
+                "$and":[
+                    {
+                        "$or":[
+                            {"$and":[
+                                {"NgayNhapVien":{"$lt":endDate}},
+                                {"TinhTrangDieuTri":{
+                                    "$in":constants.DANGDIEUTRI["danhsach"]
+                                }}
+                            ]},
+                            {"$and":[
+                                {"NgayKetThucDieuTri":
+                                {
+                                    "$gte":startDate,
+                                    "$lt":endDate
+                                }}
+                            ]}
+                        ]
+                    },
+                    {"Bo.PhanLoaiBo":"BoVoBeoNho"}
                 ]
             }
-        },
+        }, 
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -170,36 +232,57 @@ def tongSo_boDaDangDieuTri_boVoBeoNho(startdate, enddate,):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "2.1 Tong so bo vo beo nho da va dang dieu tri"
-    print(reportName)
     for result in results:
-        print(result)
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "soluong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # 2,2	Tổng số bò vỗ béo trung đã và đang điều trị
 def tongSo_boDaDangDieuTri_boVoBeoTrung(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
-            "$match": {
-                "$and": [
-                    {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
-                    {"Bo.PhanLoaiBo": "BoVoBeoTrung"},
+            "$match":{
+                "$and":[
+                    {
+                        "$or":[
+                            {"$and":[
+                                {"NgayNhapVien":{"$lt":endDate}},
+                                {"TinhTrangDieuTri":{
+                                    "$in":constants.DANGDIEUTRI["danhsach"]
+                                }}
+                            ]},
+                            {"$and":[
+                                {"NgayKetThucDieuTri":
+                                {
+                                    "$gte":startDate,
+                                    "$lt":endDate
+                                }}
+                            ]}
+                        ]
+                    },
+                    {"Bo.PhanLoaiBo":"BoVoBeoTrung"}
                 ]
             }
-        },
+        }, 
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -218,36 +301,57 @@ def tongSo_boDaDangDieuTri_boVoBeoTrung(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "2.2 Tong so bo vo beo trung da va dang dieu tri"
-    print(reportName)
     for result in results:
-        print(result)
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "soluong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # 2,3	Tổng số bò vỗ béo lớn đã và đang điều trị
 def tongSo_boDaDangDieuTri_boVoBeoLon(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
-            "$match": {
-                "$and": [
-                    {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
-                    {"Bo.PhanLoaiBo": "BoVoBeoLon"},
+            "$match":{
+                "$and":[
+                    {
+                        "$or":[
+                            {"$and":[
+                                {"NgayNhapVien":{"$lt":endDate}},
+                                {"TinhTrangDieuTri":{
+                                    "$in":constants.DANGDIEUTRI["danhsach"]
+                                }}
+                            ]},
+                            {"$and":[
+                                {"NgayKetThucDieuTri":
+                                {
+                                    "$gte":startDate,
+                                    "$lt":endDate
+                                }}
+                            ]}
+                        ]
+                    },
+                    {"Bo.PhanLoaiBo":"BoVoBeoLon"}
                 ]
             }
-        },
+        }, 
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -266,22 +370,28 @@ def tongSo_boDaDangDieuTri_boVoBeoLon(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "2.3 Tong so bo vo beo lon da va dang dieu tri"
-    print(reportName)
     for result in results:
-        print(result)
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "soluong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # 2,5	Tổng số bò vỗ béo đã điều trị Khỏi bệnh
 def tongSo_boKhoiBenh_boVoBeo(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
-                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoVoBeo}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": constants.BOVOBEO["danhsach"]}},
                     {"TinhTrangDieuTri": "KhoiBenh"},
                 ]
             }
@@ -289,14 +399,14 @@ def tongSo_boKhoiBenh_boVoBeo(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -315,21 +425,26 @@ def tongSo_boKhoiBenh_boVoBeo(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "2.5 Tổng số bò vỗ béo đã điều trị Khỏi bệnh"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 2,6	Tổng số bò vỗ béo đã điều trị không khỏi bệnh
 def tongSo_boKhongKhoiBenh_boVoBeo(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.PhanLoaiBo": {"$in": giaiDoanBoVoBeo}},
                     {
                         "TinhTrangDieuTri": {
@@ -347,14 +462,14 @@ def tongSo_boKhongKhoiBenh_boVoBeo(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -373,36 +488,41 @@ def tongSo_boKhongKhoiBenh_boVoBeo(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "2.6 Tổng số bò vỗ béo đã điều trị không khỏi bệnh"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 2,7	Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý
 def tongSo_boDaDeXuatThanhLy_boVoBeo(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
-                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoVoBeo}},
+                    {"Bo.PhanLoaiBo": {"$in": constants.BOVOBEO["danhsach"]}},
                     {"HinhThucThanhLy": "DeXuatThanhLy"},
-                    {"NgayDeXuat": {"$gte": startDate, "$lte": endDate}},
+                    {"NgayDeXuat": {"$gte": startDate, "$lt": endDate}},
                 ]
             }
         },
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -421,37 +541,42 @@ def tongSo_boDaDeXuatThanhLy_boVoBeo(startdate, enddate):
     ]
     results = db.thanhly.aggregate(pipeline)
     reportName = "2.7 Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # Tổng số bò sinh sản đã và đang điều trị
 # 3,1	Tổng số bò chờ phối đang điều trị
 def tongSo_boDaDangDieuTri_boChoPhoi(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
-                    {"Bo.PhanLoaiBo": {"$in": giaiDoanBoChoPhoi}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": constants.BOCHOPHOI["danhsach"]}},
                 ]
             }
         },
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -470,20 +595,26 @@ def tongSo_boDaDangDieuTri_boChoPhoi(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "3.1 Tổng số bò chờ phối đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 3,2	Tổng số bò mang thai 2-7 tháng đã và đang điều trị
 def tongSo_boDaDangDieuTri_boMangThaiNho(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.PhanLoaiBo": "BoMangThaiNho"},
                 ]
             }
@@ -491,14 +622,14 @@ def tongSo_boDaDangDieuTri_boMangThaiNho(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -515,23 +646,28 @@ def tongSo_boDaDangDieuTri_boMangThaiNho(startdate, enddate):
             }
         },
     ]
-    results = bo.dieutri.aggregate(pipeline)
+    results = db.dieutri.aggregate(pipeline)
     reportName = "3.2 Tổng số bò mang thai 2-7 tháng đã và đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 3,3	Tổng số bò mang thai 8-9 tháng đã và đang điều trị
 def tongSo_boDaDangDieuTri_boMangThaiLon(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.PhanLoaiBo": "BoMangThaiLon"},
                 ]
             }
@@ -539,14 +675,14 @@ def tongSo_boDaDangDieuTri_boMangThaiLon(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -565,21 +701,26 @@ def tongSo_boDaDangDieuTri_boMangThaiLon(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "3.3 Tổng số bò mang thai 8-9 tháng đã và đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 3,4	Tổng số bò nuôi con 0-1 tháng đã và đang điều trị
 def tongSo_boDaDangDieuTri_boNuoiConNho(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.PhanLoaiBo": "BoMeNuoiConNho"},
                 ]
             }
@@ -587,14 +728,14 @@ def tongSo_boDaDangDieuTri_boNuoiConNho(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -613,21 +754,26 @@ def tongSo_boDaDangDieuTri_boNuoiConNho(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "3.4 Tổng số bò nuôi con 0-1 tháng đã và đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 3,5	Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị
 def tongSo_boDaDangDieuTri_boNuoiConLon(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.PhanLoaiBo": "BoMeNuoiConLon"},
                 ]
             }
@@ -635,14 +781,14 @@ def tongSo_boDaDangDieuTri_boNuoiConLon(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -661,21 +807,26 @@ def tongSo_boDaDangDieuTri_boNuoiConLon(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "3.5 Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 3,6	Tổng số bò hậu bị  9-12 tháng đã và đang điều trị
 def tongSo_boDaDangDieuTri_boHauBi(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.PhanLoaiBo": "BoHauBi"},
                 ]
             }
@@ -683,14 +834,14 @@ def tongSo_boDaDangDieuTri_boHauBi(startdate, enddate):
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -709,15 +860,21 @@ def tongSo_boDaDangDieuTri_boHauBi(startdate, enddate):
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "3.6 Tổng số bò hậu bị 9-12 tháng đã và đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 3,7	Tổng số bò hậu bị  13-18 tháng đã và đang điều trị
 def tongSo_boDaDangDieuTri_boHauBiChoPhoi(startdate, enddate
 ):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
@@ -731,14 +888,14 @@ def tongSo_boDaDangDieuTri_boHauBiChoPhoi(startdate, enddate
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -757,19 +914,407 @@ def tongSo_boDaDangDieuTri_boHauBiChoPhoi(startdate, enddate
     ]
     results = db.dieutri.aggregate(pipeline)
     reportName = "3.7 Tổng số bò hậu bị 13-18 tháng đã và đang điều trị"
-    print(reportName)
     for result in results:
-        print("   so luong:" + str(result["soLuong"]))
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 
 # 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_boNuoiThitBCT(startdate, enddate
+):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BoNuoiThitBCT"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.dieutri.aggregate(pipeline)
+    reportName = "3.8 Tổng số bò thịt  13-18 tháng đã và đang điều trị"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
 # Tổng số bê đã và đang điều trị
 # 4,1	Tổng số bê từ 0-1 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_beSinh(startdate, enddate
+):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BeSinh"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.dieutri.aggregate(pipeline)
+    reportName = "4.1 Tổng số bê từ 0-1 tháng đã và đang điều trị"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
 # 4,2	Tổng số bê từ ≥ 1-4 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_beTheoMe(startdate, enddate
+):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BeTheoMe"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.dieutri.aggregate(pipeline)
+    reportName = "4.2 Tổng số bê từ ≥ 1-4 tháng đã và đang điều trị"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
 # 4,3	Tổng số bê từ cai sữa ≥ 4 tháng đến 8 tháng đã và đang điều trị
+def tongSo_boDaDangDieuTri_beCaiSua(startdate, enddate
+):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"Bo.PhanLoaiBo": "BeCaiSua"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.dieutri.aggregate(pipeline)
+    reportName = "4.3 Tổng số bê từ cai sữa ≥ 4 tháng đến 8 tháng đã và đang điều trị"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
+
 # 4,4	Tổng số bê đã điều trị khỏi bệnh
+def tongSo_boKhoiBenh_be(startdate, enddate):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": constants.BE["danhsach"]}},
+                    {"TinhTrangDieuTri": "KhoiBenh"},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.dieutri.aggregate(pipeline)
+    reportName = "4.4 Tổng số bê đã điều trị khỏi bệnh"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
+
 # 4,5	Tổng số bê đã điều trị không khỏi bệnh
+def tongSo_boKhongKhoiBenh_be(startdate, enddate):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"NgayKetThucDieuTri": {"$gte": startDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
+                    {"Bo.PhanLoaiBo": {"$in": constants.BE["danhsach"]}},
+                    {
+                        "TinhTrangDieuTri": {
+                            "$in": [
+                                "KhongKhoiBenh",
+                                "Chet",
+                                "ChamSocDacBiet",
+                                "ThanhLy",
+                            ]
+                        }
+                    },
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.dieutri.aggregate(pipeline)
+    reportName = "4.5 Tổng số bê đã điều trị không khỏi bệnh"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
+
 # 4,6	Tổng số bê mắc bệnh đã đề nghị bán thanh lý
+def tongSo_boDaDeXuatThanhLy_be(startdate, enddate):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    pipeline = [
+        {
+            "$match": {
+                "$and": [
+                    {"Bo.PhanLoaiBo": {"$in": constants.BE["danhsach"]}},
+                    {"HinhThucThanhLy": "DeXuatThanhLy"},
+                    {"NgayDeXuat": {"$gte": startDate, "$lt": endDate}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    results = db.thanhly.aggregate(pipeline)
+    reportName = "4.6 Tổng số bê mắc bệnh đã đề nghị bán thanh lý"
+    for result in results:
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
+
 # Bệnh tật và tính thích nghi của từng giống bò
 
 
@@ -782,13 +1327,13 @@ def tongSo_boDaDangDieuTri_theoGiongBo(startdate,
     nhombo=tatCaNhomBo,
 ):
     startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
     pipeline = [
         {
             "$match": {
                 "$and": [
                     {"NgayKetThucDieuTri": {"$gte": startDate}},
-                    {"NgayBatDauDieuTri": {"$lte": endDate}},
+                    {"NgayBatDauDieuTri": {"$lt": endDate}},
                     {"Bo.NhomBo": {"$in": nhombo["danhsach"]}},
                     {"Bo.PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
                     {"Bo.GiongBo": giongbo},
@@ -799,14 +1344,14 @@ def tongSo_boDaDangDieuTri_theoGiongBo(startdate,
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -836,10 +1381,15 @@ def tongSo_boDaDangDieuTri_theoGiongBo(startdate,
         + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
         + " - mắc bệnh"
     )
-    print(reportName)
     for result in results:
-        print("   Số lượng:" + str(result["soLuong"]))
-
+        if result != None:
+            test_result = {
+                "NoiDung":reportName,
+                "SoLuong":result["soluong"],
+                "DanhSachSoTai":result["danhsachsotaijoined"]
+            }
+            test_result_collection.baocaothang.update_one({"_id":testResultId},{"$push":{"KetQua":test_result}})
+        print(reportName+": "+str(result["soluong"]))
 
 # 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh
 

@@ -114,7 +114,7 @@ phoiGiong.soLuongBoKhamPhoiLan1("2023-09-01", "2023-09-18"
 )
 
 # Danh sach bo it hon 100 ngay tuoi trong cac nhom bo
-"""
+
 
 
 
@@ -226,7 +226,6 @@ thongTinDan.tongSo_bebenh_chothanhly(startDate,endDate)
 
 # 31	Tổng số bò bệnh đang chờ thanh lý
 thongTinDan.tongSo_bobenh_chothanhly(startDate,endDate)
-
 """
 
 # TEST BAO CAO THANG THU Y
@@ -286,7 +285,7 @@ thuY.tongSo_boDaDangDieuTri_boHauBi(startDate, endDate)
 # 3,7	Tổng số bò hậu bị  13-18 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(startDate, endDate
 )
-
+"""
 # 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
 # Tổng số bê đã và đang điều trị
 # 4,1	Tổng số bê từ 0-1 tháng đã và đang điều trị
@@ -499,7 +498,6 @@ for bo in giongBo:
 # 5,79	Tổng số bò đực vỗ béo trung giống BBB (Blan Blue Belgium) mắc bệnh
 # 5,80	Tổng số bò đực vỗ béo lớn giống BBB (Blan Blue Belgium) mắc bệnh
 """
-
 """
 # Xuat thong tin dan
 for i in range(1,10000):

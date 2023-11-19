@@ -98,26 +98,10 @@ lanPhoi3 = {"min":3,"max":999}
 # fileName = "testnhanh" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
 # wb.save(fileName)
 
-results = db.bonhaptrai.aggregate([
-    {"$match":{"SoTai":"BLUE2554"}},
-    {"$project":{
-        "songayduoctao":{
-            "$dateDiff":
-            {
-                "startDate":"$NgayNhap",
-                "endDate":"$CreatedAt",
-                "unit":"day"
-            }
-        }
-    }}
-])
+
+results = db.dieutri.find({}).distinct("Bo.PhanLoaiBo")
 
 for result in results:
-    print(result["songayduoctao"])
-
-results = db.bonhaptrai.find({"NhomBo":{"$nin":["Bo","Be","XuatBan","LoaiThai","BeChet"]}})
-
-for result in results:
-    print(result["SoTai"])
+    print(result)
 # Close mongo connection
 # client.close()

@@ -1,9 +1,9 @@
 # CONNECTION_STRING = "mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/"
 BASE = "https://dev-trangtraibo.aristqnu.com"
-CONNECTION_STRING = "mongodb://admin:admintest@45.119.84.161:27017/"
+CONNECTION_STRING = "mongodb://thagricoadmin:thagricoadmin@45.119.85.235:27017/"
 TEST_RESULT_DB = "Linh_Test"
 TEST_RESULT_COL_BAOCAOTHANG = "BaoCaoThang"
-DB = "QuanLyTrangTrai_0811"
+DB = "TrangTraiBoDb"
 DB_COL_BONHAPTRAI = "BoNhapTrai"
 DB_COL_TIEMVACCINE = "ThongTinTiemVaccine"
 
@@ -14,7 +14,9 @@ TENANTS = ["","_1","_2","_3","_4"]
 
 giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
 
-BOCHOPHOI = ["BoChoPhoi", "BoHauBiChoPhoi"]
+BOCHOPHOI = {
+    "tennhom":"bò chờ phối",
+    "danhsach":["BoChoPhoi", "BoHauBiChoPhoi"]}
 
 TATCANHOMBO = {
     "tennhom": "bò",

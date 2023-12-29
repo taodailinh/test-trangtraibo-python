@@ -14,8 +14,9 @@ page = "https://dev-trangtrai.aristqnu.com/"
 user = "admin"
 password = "admintest"
 
-startDate = "2023-09-01"
-endDate = "2023-09-30"
+startDate = "2023-12-01"
+endDate = "2023-12-28"
+today = "2023-12-28"
 
 # Connect to mongodb
 # client = MongoClient(constants.CONNECTION_STRING)
@@ -30,7 +31,7 @@ danhsachnhombo = ["XuatBan", "Bo", "Be"]
 # Danh sách phân loại bò
 beDuoi1thang = {"tennhom": "bê dưới 1 tháng", "danhsach": ["BeSinh"]}
 beTheoMe = {"tennhom": "bê theo mẹ 1-4 tháng", "danhsach": ["BeTheoMe"]}
-beCaiSua = {"tennhom": "bê theo mẹ 1-4 tháng", "danhsach": ["BeCaiSua"]}
+beCaiSua = {"tennhom": "bê cai sữa", "danhsach": ["BeCaiSua"]}
 boHauBi = {"tennhom": "bò hậu bị 9-12 tháng", "danhsach": ["BoHauBi"]}
 boHauBiChoPhoi = {"tennhom": "bò hậu bị 13-18 tháng", "danhsach": ["BoHauBiChoPhoi"]}
 boNuoiThitBCT9_12 = {
@@ -86,7 +87,6 @@ giongBo = [
 ]
 
 
-
 """
 # Print current path
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -122,85 +122,82 @@ phoiGiong.soLuongBoKhamPhoiLan1("2023-09-01", "2023-09-18"
 # So luong bo cho phoi
 thongTinDan.tongSoBo(startDate,endDate,"#1",boChoPhoi)
 
+"""
 
-#1. Số bò chờ phối
+"""
+# 1. Số bò chờ phối
 thongTinDan.soBoChoPhoi()
 
-#2 So luong bo mang thai nho
-thongTinDan.tongSoBo(startDate,endDate,"#2",boMangThaiNho,)
-
-#3 So luong bo mang thai lon cho de
-thongTinDan.tongSoBo(startDate,endDate,"#3",boMangThaiLonChoDe)
-
-#4 So luong bo nuoi con nho
-thongTinDan.tongSoBo(startDate,endDate,"#4",boMeNuoiConNho)
-
-#5 So luong bo nuoi con lon
+# 2 So luong bo mang thai nho
 thongTinDan.tongSoBo(
-    startDate,
-    endDate,
-    "#5",
-    boMeNuoiConLon,
+    today,
+    "#2",
+    boMangThaiNho,
 )
+
+# 3 So luong bo mang thai lon cho de
+thongTinDan.tongSoBo(today, "#3", boMangThaiLonChoDe)
+
+# 4 So luong bo nuoi con nho
+thongTinDan.tongSoBo(today, "#4", boMeNuoiConNho)
+
+# 5 So luong bo nuoi con lon
+thongTinDan.soBoNuoiConLon(today)
 
 # Trong luong binh quan be cai cai sua
 thongTinDan.trongLuongBinhQuan_beCaiCaiSua()
 
 # Trong luong binh quan be duc cai sua
 thongTinDan.trongLuongBinhQuan_beDucCaiSua()
-
 # Tong so be cai cai sua
-thongTinDan.tongSoBo(
-    startDate, endDate,"#8",beCaiSua, gioiTinhCai
-)
+thongTinDan.tongSoBo(today, "#8", beCaiSua, gioiTinhCai)
 
 # Tong so be duc cai sua
-thongTinDan.tongSoBo(startDate, endDate,"#9", beCaiSua, gioiTinhDuc
-)
+thongTinDan.tongSoBo(today, "#9", beCaiSua, gioiTinhDuc)
 
 # 10	Tổng số bê cái hậu bị 9- 12 tháng
-thongTinDan.tongSoBo(startDate, endDate,"#10", boHauBi, gioiTinhCai
-)
+thongTinDan.tongSoBo(today, "#10", boHauBi, gioiTinhCai)
 
 # 11	Tổng số bê đực hậu bị 9- 12 tháng
-thongTinDan.tongSoBo(startDate, endDate,"#11", boHauBi, gioiTinhDuc
-)
+thongTinDan.tongSoBo(today, "#11", boHauBi, gioiTinhDuc)
 
 # 12	Tổng số bê đực nuôi thịt BCT bị 9- 12
-thongTinDan.tongSoBo(
-    startDate, endDate,"#12", boNuoiThitBCT9_12, gioiTinhDuc
-)
+thongTinDan.tongSoBo(today, "#12", boNuoiThitBCT9_12, gioiTinhDuc)
 
 
 # 13	Tổng số bê cái nuôi thịt BCT bị 9- 12 tháng
-thongTinDan.tongSoBo( startDate, endDate,"#13", boNuoiThitBCT9_12, gioiTinhCai
-)
+thongTinDan.tongSoBo(today, "#13", boNuoiThitBCT9_12, gioiTinhCai)
 
 # 14	Tổng số bò cái hậu bị BCT 13-18 tháng
-thongTinDan.tongSoBo(startDate, endDate,"#14", boHauBiChoPhoi, gioiTinhCai)
+thongTinDan.tongSoBo(today, "#14", boHauBiChoPhoi, gioiTinhCai)
 
 # 15	Tổng số bò đực hậu bị BCT 13-18 tháng
-thongTinDan.tongSoBo(startDate, endDate,"#15", boNuoiThitBCT13_18, gioiTinhDuc)
+thongTinDan.tongSoBo(today, "#15", boNuoiThitBCT13_18, gioiTinhDuc)
 
 # 16	Tổng số bò đực nuôi thịt BCT 13-18 tháng
-thongTinDan.tongSoBo(startDate, endDate,"#16", boNuoiThitBCT13_18, gioiTinhDuc)
+thongTinDan.tongSoBo(today, "#16", boNuoiThitBCT13_18, gioiTinhDuc)
 
 # 17	Tổng số bò cái nuôi thịt BCT 13-18 tháng
-thongTinDan.tongSoBo(startDate, endDate,"#17", boNuoiThitBCT13_18, gioiTinhCai)
+thongTinDan.tongSoBo(today, "#17", boNuoiThitBCT13_18, gioiTinhCai)
 
 # 18	Tổng số bò vỗ béo nhỏ
-thongTinDan.tongSoBo(startDate, endDate,"#18", boVoBeoNho)
+thongTinDan.tongSoBo(today, "#18", boVoBeoNho)
 
 # 19	Tăng trọng bình quân của BVB nhỏ
-
+thongTinDan.tangTrongBinhQuan(startDate, endDate, boVoBeoNho, "#19")
 # 20	Tổng số bò vỗ béo trung
-thongTinDan.tongSoBo(startDate, endDate,"#20", boVoBeoTrung)
+thongTinDan.tongSoBo(today, "#20", boVoBeoTrung)
 
 # 21	Tăng trọng bình quân của BVB trung
+thongTinDan.tangTrongBinhQuan(startDate, endDate, boVoBeoTrung, "#21")
+
 # 22	Tổng số bò vỗ béo lớn
-thongTinDan.tongSoBo(startDate, endDate,"#22", boVoBeoLon)
+thongTinDan.tongSoBo(today,"#22", boVoBeoLon)
+
 
 # 23	Tăng trọng bình quân của BVB lớn
+thongTinDan.tangTrongBinhQuan(startDate, endDate, boVoBeoLon, "#23")
+"""
 # 24	Tổng số bò sinh sản nhập trại
 thongTinDan.tongSo_nhapTrai_boSinhSan(startDate, endDate)
 
@@ -222,10 +219,13 @@ thongTinDan.tongSo_bogiong_xuatban(startDate,endDate)
 thongTinDan.tongSo_bovobeo_xuatban(startDate,endDate)
 
 # 30	Tổng số bê bệnh đang chờ thanh lý
-thongTinDan.tongSo_bebenh_chothanhly(startDate,endDate)
+thongTinDan.tongSo_bebenh_chothanhly(today)
 
 # 31	Tổng số bò bệnh đang chờ thanh lý
-thongTinDan.tongSo_bobenh_chothanhly(startDate,endDate)
+thongTinDan.tongSo_bobenh_chothanhly(today)
+"""
+"""
+
 """
 
 # TEST BAO CAO THANG THU Y
@@ -296,7 +296,7 @@ thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(startDate, endDate
 # 4,6	Tổng số bê mắc bệnh đã đề nghị bán thanh lý
 # Bệnh tật và tính thích nghi của từng giống bò
 
-
+"""
 for bo in giongBo:
     # 5,1	Tổng số bê giống Brahman từ 0-1 tháng tuổi mắc bệnh
     thuY.tongSo_boDaDangDieuTri_theoGiongBo(
@@ -430,6 +430,7 @@ for bo in giongBo:
         boVoBeoLon,
         gioiTinhDuc,
     )
+"""
 
 # 5,17	Tổng số bê giống Drougth master từ 0-1 tháng tuổi mắc bệnh
 
@@ -497,7 +498,6 @@ for bo in giongBo:
 # 5,78	Tổng số bò đực vỗ béo nhỏ giống BBB (Blan Blue Belgium) mắc bệnh
 # 5,79	Tổng số bò đực vỗ béo trung giống BBB (Blan Blue Belgium) mắc bệnh
 # 5,80	Tổng số bò đực vỗ béo lớn giống BBB (Blan Blue Belgium) mắc bệnh
-"""
 """
 # Xuat thong tin dan
 for i in range(1,10000):

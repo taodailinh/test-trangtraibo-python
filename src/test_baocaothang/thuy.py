@@ -23,11 +23,19 @@ gioiTinhTatCa = {
 }
 
 
-testResultId = test_result_collection.baocaothang.insert_one({
-    "LoaiBaoCao":"ThuY",
-    "CreatedAt":datetime.now(),
-    "KetQua":[]
-}).inserted_id
+testResultDocument = test_result_collection.baocaothang.find_one(
+    {"LoaiBaoCao": "ThuY"}
+)
+if testResultDocument is None:
+    testResultDocument = test_result_collection.baocaothang.insert_one(
+        {"LoaiBaoCao": "ThuY", "CreatedAt": datetime.now(), "KetQua": []}
+    )
+    testResultId = testResultDocument.inserted_id
+else:
+    testResultId = testResultDocument["_id"]
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$set": {"KetQua": [], "UpdatedAt": datetime.now()}}
+    )
 
 
 # 1,1	Tổng số bò đã điều trị khỏi bệnh

@@ -3930,24 +3930,13 @@ def tuoiPhoiGiongLanDau_theoGiongBo_ver1(
 
 # Test khoảng cách giữa 2 lứa đẻ bình quân
 def khoangCachGiua2LuaDe(
-    startdate,
-    enddate,
     giongbo,
-    gioitinh=gioiTinhTatCa,
-    nhombo=tatCaNhomBo,
 ):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
     pipeline = [
         {
             "$match": {
-                "$expr": {
-                    "$and": [
-                        {"$ne": ["$LuaDe", None]},
-                        {"$gt": ["$LuaDe", 1]},
-                        {"GiongBo": giongbo},
-                    ]
-                }
+                        "LuaDe": {"$ne":None,"$gt":1},
+                        "GiongBo": giongbo,
             }
         },
         # {"$match":{"$expr":{"$gt":["$LuaDe",1]}}},
@@ -3983,7 +3972,7 @@ def khoangCachGiua2LuaDe(
                 "soluong": {"$count": {}},
                 "songaydebinhquan": {"$avg": "$khoangcachluadebinhquan"},
                 "danhsachsotai": {"$push": "$_id"},
-            }
+                }
         },
         {
             "$project": {
@@ -4008,16 +3997,28 @@ def khoangCachGiua2LuaDe(
     ]
     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    danhSachSoTai = ""
+    songaydebinhquan = None
     startTime = time.time()
-    results = db.bonhaptrai.aggregate(pipeline)
+    results = db.bonhaptrai_aggregate(pipeline)
     reportName = "Chênh lệch bình quân giữa 2 lứa đẻ giống bò " + giongbo
     print(reportName)
     for result in results:
+        danhSachSoTai = result["danhsachsotaijoined"]
         print("   Số lượng:" + str(result["soluong"]))
+        songaydebinhquan = result["songaydebinhquan"]/(1000 * 24 * 60 * 60)
         print(
-            "   Chênh lệch ngày đẻ bình quân giữa các lứa đẻ:"
-            + str(result["songaydebinhquan"])
+            "   Chênh lệch ngày đẻ bình quân giữa các lứa đẻ:" + str(songaydebinhquan)
         )
+    test_result = {
+        "NoiDung": reportName,
+        "DanhSachSoTai": danhSachSoTai,
+        "SoNgayDeBinhQuan": songaydebinhquan,
+    }
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+    )
+
     finishTime = time.time()
     print("tong thoi gian: " + str(finishTime - startTime))
 

@@ -173,6 +173,8 @@ for bo in giongBo:
         endDate,
         bo,
     )
+
+    phoiGiong.khoangCachGiua2LuaDe(bo)
 """
 """
 

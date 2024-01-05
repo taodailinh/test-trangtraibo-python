@@ -13,8 +13,8 @@ user = "admin"
 password = "admintest"
 
 startDate = "2023-12-01"
-endDate = "2023-12-28"
-today = "2023-12-28"
+endDate = "2023-12-31"
+today = "2023-12-31"
 
 # Connect to mongodb
 # client = MongoClient(constants.CONNECTION_STRING)
@@ -30,6 +30,7 @@ danhsachnhombo = ["XuatBan", "Bo", "Be"]
 beDuoi1thang = {"tennhom": "bê dưới 1 tháng", "danhsach": ["BeSinh"]}
 beTheoMe = {"tennhom": "bê theo mẹ 1-4 tháng", "danhsach": ["BeTheoMe"]}
 beCaiSua = {"tennhom": "bê cai sữa", "danhsach": ["BeCaiSua"]}
+be_tatCa = {"tennhom": "bê", "danhsach": ["BeSinh","BeTheoMe","BeCaiSua"]}
 boHauBi = {"tennhom": "bò hậu bị 9-12 tháng", "danhsach": ["BoHauBi"]}
 boHauBiChoPhoi = {"tennhom": "bò hậu bị 13-18 tháng", "danhsach": ["BoHauBiChoPhoi"]}
 boNuoiThitBCT9_12 = {
@@ -55,7 +56,13 @@ boVoBeoLon = {
     "danhsach": ["BoVoBeoLon"],
 }
 
-boChoPhoi = {"tennhom": "bò chờ phối", "danhsach": ["BoChoPhoi", "BoHauBiChoPhoi"]}
+boVoBeo = {
+    "tennhom": "bò vỗ béo",
+    "danhsach": ["BoVoBeoNho","BoVoBeoTrung","BoVoBeoLon"],
+}
+
+
+boChoPhoi = {"tennhom": "bò chờ phối", "danhsach": ["BoChoPhoi"]}
 boMangThaiNho = {"tennhom": "bò mang thai 2-7 tháng", "danhsach": ["BoMangThaiNho"]}
 boMangThaiLon = {"tennhom": "bò mang thai 8-9 tháng", "danhsach": ["BoMangThaiLon"]}
 boMangThaiLonChoDe = {
@@ -82,215 +89,356 @@ giongBo = [
     "Angus",
     "Charolais",
     "BBB (Blan Blue Belgium)",
+    "Không xác định"
 ]
 
 
-"""
-
 # TEST BAO CAO THANG THU Y
 print("-- Test bao cao thu y --")
-# 1,1	Tổng số bò đã điều trị khỏi bệnh
+
+"""
+#1.1 Tổng số bò bị bệnh
+thuY.tongSo_boBiBenh(startDate, endDate)
+
+#1.2 Tổng số ca bị bệnh
+thuY.tongSo_caMacBenh(startDate,endDate)
+
+# 1.3 Tổng số bò đã điều trị khỏi bệnh
 thuY.tongSo_boKhoiBenh(startDate, endDate)
 
-# 1,2	Tổng số bò đã điều trị  (Chết):
+
+# 1,.4	Tổng số bò đã điều trị  (Chết):
 thuY.tongSo_boChetCoDieuTri(startDate, endDate)
 
-# 1,3	Tổng số bò mắc bệnh đã đề nghị bán thanh lý
+# 1,5	Tổng số bò mắc bệnh đã đề nghị bán thanh lý
 thuY.tongSo_boDaDeXuatThanhLy(startDate, endDate)
 
 # Tổng số bò vỗ béo đã và đang điều trị
 # 2,1	Tổng số bò vỗ béo nhỏ đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boVoBeoNho(startDate, endDate)
+thuY.tongSo_boBiBenh_general(startDate,endDate,boVoBeoNho)
 
 # 2,2	Tổng số bò vỗ béo trung đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boVoBeoTrung(startDate, endDate)
+thuY.tongSo_boBiBenh_general(startDate,endDate,boVoBeoTrung)
 
 # 2,3	Tổng số bò vỗ béo lớn đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boVoBeoLon(startDate, endDate)
+thuY.tongSo_boBiBenh_general(startDate,endDate,boVoBeoLon)
 
 # 2,5	Tổng số bò vỗ béo đã điều trị Khỏi bệnh
 thuY.tongSo_boKhoiBenh_boVoBeo(startDate, endDate)
+thuY.tongSo_boKhoiBenh_general(startDate,endDate,phanloaibo = boVoBeo)
 
 # 2,6	Tổng số bò vỗ béo đã điều trị không khỏi bệnh
 thuY.tongSo_boKhongKhoiBenh_boVoBeo(startDate, endDate)
+thuY.tongSo_boKhongKhoiBenh_general(startDate,endDate,phanloaibo = boVoBeo)
 
 # 2,7	Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý
 thuY.tongSo_boDaDeXuatThanhLy_boVoBeo(startDate, endDate)
-
+thuY.tongSo_boDaDeXuatThanhLy_general(startDate,endDate,phanloaibo = boVoBeo)
 # Tổng số bò sinh sản đã và đang điều trị
 # 3,1	Tổng số bò chờ phối đang điều trị
 thuY.tongSo_boDaDangDieuTri_boChoPhoi(startDate, endDate)
+thuY.tongSo_boBiBenh_general(startDate,endDate,boChoPhoi)
 
 
 # 3,2	Tổng số bò mang thai 2-7 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boMangThaiNho(startDate, endDate
 )
+
+thuY.tongSo_boBiBenh_general(startDate,endDate,boMangThaiNho)
+
 # 3,3	Tổng số bò mang thai 8-9 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boMangThaiLon(startDate, endDate
 )
 
+thuY.tongSo_boBiBenh_general(startDate,endDate,boMangThaiLon)
+
+
 # 3,4	Tổng số bò nuôi con 0-1 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boNuoiConNho(startDate, endDate
 )
+thuY.tongSo_boBiBenh_general(startDate,endDate,boMeNuoiConNho)
 
 # 3,5	Tổng số bò nuôi con ≥1-4 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boNuoiConLon(startDate, endDate
 )
+thuY.tongSo_boBiBenh_general(startDate,endDate,boMeNuoiConLon)
 
 # 3,6	Tổng số bò hậu bị  9-12 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boHauBi(startDate, endDate)
+thuY.tongSo_boBiBenh_general(startDate,endDate,boHauBi)
+
 
 
 # 3,7	Tổng số bò hậu bị  13-18 tháng đã và đang điều trị
 thuY.tongSo_boDaDangDieuTri_boHauBiChoPhoi(startDate, endDate
 )
-"""
+thuY.tongSo_boBiBenh_general(startDate,endDate,boHauBiChoPhoi)
+
 # 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
-# Tổng số bê đã và đang điều trị
-# 4,1	Tổng số bê từ 0-1 tháng đã và đang điều trị
-# 4,2	Tổng số bê từ ≥ 1-4 tháng đã và đang điều trị
-# 4,3	Tổng số bê từ cai sữa ≥ 4 tháng đến 8 tháng đã và đang điều trị
-# 4,4	Tổng số bê đã điều trị khỏi bệnh
-# 4,5	Tổng số bê đã điều trị không khỏi bệnh
-# 4,6	Tổng số bê mắc bệnh đã đề nghị bán thanh lý
-# Bệnh tật và tính thích nghi của từng giống bò
+thuY.tongSo_boBiBenh_general(startDate,endDate,boNuoiThitBCT13_18)
 
 """
+# Tổng số bê đã và đang điều trị
+# 4,1	Tổng số bê từ 0-1 tháng đã và đang điều trị
+thuY.tongSo_boBiBenh_general(startDate,endDate,beDuoi1thang)
+
+# 4,2	Tổng số bê từ ≥ 1-4 tháng đã và đang điều trị
+thuY.tongSo_boBiBenh_general(startDate,endDate,beTheoMe)
+
+# 4,3	Tổng số bê từ cai sữa ≥ 4 tháng đến 8 tháng đã và đang điều trị
+thuY.tongSo_boBiBenh_general(startDate,endDate,beCaiSua)
+
+# 4,4	Tổng số bê đã điều trị khỏi bệnh
+thuY.tongSo_boKhoiBenh_general(startDate,endDate,phanloaibo = be_tatCa)
+
+# 4,5	Tổng số bê đã điều trị không khỏi bệnh
+thuY.tongSo_boKhongKhoiBenh_general(startDate,endDate,phanloaibo = be_tatCa)
+
+# 4,6	Tổng số bê mắc bệnh đã đề nghị bán thanh lý
+thuY.tongSo_boDaDeXuatThanhLy_general(startDate,endDate,phanloaibo = be_tatCa)
+
+
+# Bệnh tật và tính thích nghi của từng giống bò
+
+
+
 for bo in giongBo:
     # 5,1	Tổng số bê giống Brahman từ 0-1 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        beDuoi1thang,
+        giongbo=bo,
+        phanloaibo=beDuoi1thang,
     )
     # 5,2	Tổng số bê giống Brahman từ ≥ 1-4 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     beTheoMe,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        beTheoMe,
+        giongbo=bo,
+        phanloaibo=beTheoMe,
     )
 
     # 5,3	Tổng số bê cái giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     beCaiSua,
+    #     gioiTinhCai,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        beCaiSua,
-        gioiTinhCai,
+        giongbo=bo,
+        phanloaibo=beCaiSua,
+        gioitinh=gioiTinhCai
     )
 
     # 5,4	Tổng số bê đực giống Brahman từ ≥4-8 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     beCaiSua,
+    #     gioiTinhDuc,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        beCaiSua,
-        gioiTinhDuc,
+        giongbo=bo,
+        phanloaibo=beCaiSua,
+        gioitinh=gioiTinhDuc
     )
     # 5,5	Tổng số bò cái giống Brahman từ 9-12 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boHauBi,
+    #     gioiTinhCai,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        beCaiSua,
-        gioiTinhCai,
+        giongbo=bo,
+        phanloaibo=boHauBi,
+        gioitinh=gioiTinhCai
     )
     # 5,6	Tổng số bò đực giống Brahman từ 9-12 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boNuoiThitBCT9_12,
+    #     gioiTinhDuc,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boNuoiThitBCT9_12,
-        gioiTinhDuc,
+        giongbo=bo,
+        phanloaibo=boNuoiThitBCT9_12,
+        gioitinh=gioiTinhDuc
     )
-
     # 5,7	Tổng số bò cái giống Brahman từ 13-18 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boHauBiChoPhoi,
+    #     gioiTinhCai,
+    # )
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boHauBiChoPhoi,
-        gioiTinhCai,
+        giongbo=bo,
+        phanloaibo=boHauBiChoPhoi,
+        gioitinh=gioiTinhCai
     )
-
     # 5,8	Tổng số bò đực giống Brahman từ 13-18 tháng tuổi mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boNuoiThitBCT13_18,
+    #     gioiTinhCai,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boNuoiThitBCT13_18,
-        gioiTinhCai,
+        giongbo=bo,
+        phanloaibo=boNuoiThitBCT13_18,
+        gioitinh=gioiTinhDuc
     )
-
     # 5,9	Tổng số bò giống Brahman chờ phối mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boChoPhoi,
+    # )
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boChoPhoi,
+        giongbo=bo,
+        phanloaibo=boChoPhoi,
     )
-
     # 5,10	Tổng số bò giống Brahman mang thai 2-7 tháng mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boMangThaiNho,
+    # )
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boMangThaiNho,
+        giongbo=bo,
+        phanloaibo=boMangThaiNho,
     )
-
     # 5,11	Tổng số bò giống Brahman mang thai 8-9 tháng mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boMangThaiLon,
+    # )
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boMangThaiLon,
+        giongbo=bo,
+        phanloaibo=boMangThaiLon,
     )
     # 5,12	Tổng số bò giống Brahmannuôi con 0-1 tháng mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boMeNuoiConNho,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boMeNuoiConNho,
+        giongbo=bo,
+        phanloaibo=boMeNuoiConNho,
     )
-
     # 5,13	Tổng số bò giống Brahmannuôi con ≥ 2-4 tháng mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        startDate,
-        endDate,
-        bo,
-        boMeNuoiConLon,
-    )
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boMeNuoiConLon,
+    # )
 
-    # 5,14	Tổng số bò đực vỗ béo nhỏ giống brahman mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boVoBeoNho,
-        gioiTinhDuc,
+        giongbo=bo,
+        phanloaibo=boMeNuoiConLon,
+    )
+    # 5,14	Tổng số bò đực vỗ béo nhỏ giống brahman mắc bệnh
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boVoBeoNho,
+    #     gioiTinhDuc,
+    # )
+
+    thuY.tongSo_boBiBenh_general(
+        startDate,
+        endDate,
+        giongbo=bo,
+        phanloaibo=boVoBeoNho,
+        gioitinh=gioiTinhDuc
     )
 
     # 5,15	Tổng số bò đực vỗ béo trung giống brahman mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
-        startDate,
-        endDate,
-        bo,
-        boVoBeoTrung,
-        gioiTinhDuc,
-    )
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boVoBeoTrung,
+    #     gioiTinhDuc,
+    # )
 
-    # 5,16	Tổng số bò đực vỗ béo lớn giống brahman mắc bệnh
-    thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    thuY.tongSo_boBiBenh_general(
         startDate,
         endDate,
-        bo,
-        boVoBeoLon,
-        gioiTinhDuc,
+        giongbo=bo,
+        phanloaibo=boVoBeoTrung,
+        gioitinh=gioiTinhDuc
+    )
+    
+    # 5,16	Tổng số bò đực vỗ béo lớn giống brahman mắc bệnh
+    # thuY.tongSo_boDaDangDieuTri_theoGiongBo(
+    #     startDate,
+    #     endDate,
+    #     bo,
+    #     boVoBeoLon,
+    #     gioiTinhDuc,
+    # )
+    thuY.tongSo_boBiBenh_general(
+        startDate,
+        endDate,
+        giongbo=bo,
+        phanloaibo=boVoBeoLon,
+        gioitinh=gioiTinhDuc
     )
 """
-
+"""
 # 5,17	Tổng số bê giống Drougth master từ 0-1 tháng tuổi mắc bệnh
 
 # 5,18	Tổng số bê giống Drougth master từ ≥ 1-4 tháng tuổi mắc bệnh

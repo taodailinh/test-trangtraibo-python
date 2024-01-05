@@ -9,18 +9,10 @@ page = "https://test-trangtrai.aristqnu.com/"
 user = "admin"
 password = "admintest"
 
-startDate = "2023-09-01"
-endDate = "2023-09-30"
-workingDate = "2023-10-17"
+startDate = "2024-01-01"
+endDate = "2024-01-05"
+today = "2024-01-05"
 
-# Connect to mongodb
-client = MongoClient(constants.CONNECTION_STRING)
-# client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
-db = constants.DB
-
-# Create workbook log
-wb = Workbook()
-ws = wb.active
 danhsachnhombo = ["XuatBan", "Bo", "Be"]
 
 # Danh sách phân loại bò
@@ -107,13 +99,8 @@ vaccinethongke = ["UKT",
 
 for loaivaccine in vaccinethongke:
     # vaccine.tongSo_boDuocTiemVaccine(client,db,"ThongTinTiemVaccine",startDate,endDate,ws,nhomVaccine[loaivaccine])
-    vaccine.tongSo_boDuDieuKienTiem(workingDate,nhomVaccine[loaivaccine])
+    vaccine.tongSo_boDuDieuKienTiem(today,nhomVaccine[loaivaccine])
 
-vaccine.tongSo_boDuDieuKienTiem_THT(workingDate,nhomVaccine["THT"])
+vaccine.tongSo_boDuDieuKienTiem_THT(today,nhomVaccine["THT"])
 
 
-fileName = "baocaothang_vaccine" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
-wb.save(fileName)
-
-# Close mongo connection
-client.close()

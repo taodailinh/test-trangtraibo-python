@@ -8,6 +8,22 @@ date_format = "%Y-%m-%d"
 
 startTime = time.time()
 
+
+test_result_collection.baocaothang.delete_many({"LoaiBaoCao":"Vaccine"})
+
+testResultDocument = test_result_collection.baocaothang.find_one({"LoaiBaoCao": "Vaccine"})
+if testResultDocument is None:
+    testResultDocument = test_result_collection.baocaothang.insert_one(
+        {"LoaiBaoCao": "Vaccine", "CreatedAt": datetime.now(), "KetQua": []}
+    )
+    testResultId = testResultDocument.inserted_id
+else:
+    testResultId = testResultDocument["_id"]
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$set": {"KetQua": [], "UpdatedAt": datetime.now()}}
+    )
+
+
 giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
 
 giaiDoanBoChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
@@ -15,6 +31,11 @@ giaiDoanBoChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
 tatCaNhomBoSong = {
     "tennhom": "bò",
     "danhsach": ["BoDucGiong", "Bo", "BoChuyenVoBeo", "Be", None],
+}
+
+boKhongOTrai = {
+    "tennhom": "bò không ở trại",
+    "danhsach": ["XuatBan", "LoaiThai", "BeChet"],
 }
 
 gioiTinhTatCa = {
@@ -28,30 +49,35 @@ gioiTinhTatCa = {
 
 
 # 1	Tổng số bò đã được tiêm vaccine
-def tongSo_boDuocTiemVaccine(nhomVaccine):
-    startDate = datetime.strptime(constants.START_DATE, date_format)
-    endDate = datetime.strptime(constants.END_DATE, date_format)+timedelta(days=1)
+def tongSo_boDuocTiemVaccine(startdate,enddate,nhomVaccine):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format)+timedelta(days=1)
+    nhomvaccineID = None
+    nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":nhomVaccine})
+    if nhomvaccine is not None:
+        nhomvaccineID = nhomvaccine["_id"]
+    else:
+        print("Không tìm thấy nhóm vaccine "+nhomVaccine)
+
     pipeline = [
         {
             "$match": {
-                "$and": [
-                    {"NgayThucHien": {"$gte": startDate}},
-                    {"NgayThucHien": {"$lte": endDate}},
-                    {"DanhMucVaccine.NhomVaccineModel._id": nhomVaccine["_id"]},
-                ]
+                    "NgayThucHien": {"$gte": startDate},
+                    "NgayThucHien": {"$lt": endDate},
+                    "DanhMucVaccine.NhomVaccineModel._id": nhomvaccineID,
             }
         },
         {
             "$group": {
                 "_id": "null",
-                "soLuong": {"$count": {}},
+                "soluong": {"$count": {}},
                 "danhsachsotai": {"$push": "$Bo.SoTai"},
             }
         },
         {
             "$project": {
                 "_id": 0,
-                "soLuong": 1,
+                "soluong": 1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -68,33 +94,43 @@ def tongSo_boDuocTiemVaccine(nhomVaccine):
             }
         },
     ]
-    results = db.vaccine.aggregate(pipeline)
+    danhsachsotai = ""
+    soluong = None
+
+    results = db.vaccine_aggregate(pipeline)
     reportName = "Tổng số bò được tiêm vaccine "+nhomVaccine["ma"]
     print(reportName)
     for result in results:
-        print("   So luong:" + str(result["soLuong"]))
-        row = [reportName, result["soLuong"],]
         if result != None:
-            test_result = {
-                "LoaiBaoCao":"Vaccine",
-                "NoiDung":"Tổng số bò được tiêm vaccine",
-                "CreatedAt":datetime.now(),
-                "SoLuong":result["soLuong"],
-                "NgayBatDau":startDate,
-                "NgayKetThuc":endDate,
-                "DanhSachSoTai":result["danhsachsotaijoined"]
-            }
-            test_result_col.insert_one(test_result)
-
+            danhsachsotai = result["danhsachsotaijoined"]
+            soluong = result["soluong"]
+    test_result = {
+        "NoiDung":"Tổng số bò được tiêm vaccine",
+        "CreatedAt":datetime.now(),
+        "SoLuong":soluong,
+        "NgayBatDau":startDate,
+        "NgayKetThuc":endDate,
+        "DanhSachSoTai":danhsachsotai
+    }
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+    )
+    print(reportName +": "+ str(soluong))
 
 # 2. Tổng số bò đủ điều kiện tiêm vaccine (trừ tụ huyết trùng)
 def tongSo_boDuDieuKienTiem(workingDate,nhomVaccine,nhombo = tatCaNhomBoSong):
     dateToCheck = datetime.strptime(workingDate, date_format)+timedelta(days=1)
+    nhomvaccineID = None
+    nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":nhomVaccine})
+    if nhomvaccine is not None:
+        nhomvaccineID = nhomvaccine["_id"]
+    else:
+        print("Không tìm thấy nhóm vaccine "+nhomVaccine)
 
     print(nhomVaccine["ma"])
 
     pipelineLieuTrinh = [
-        {"$match": {"NhomVaccineModel._id":nhomVaccine["_id"]}},
+        {"$match": {"NhomVaccineModel._id":nhomvaccineID}},
         {"$project":{"SoNgayTuoi":1,"NhomVaccineModel.ChuKyTiem":1}},
         {"$group":{
             "_id":None,
@@ -197,7 +233,7 @@ def tongSo_boDuDieuKienTiem(workingDate,nhomVaccine,nhombo = tatCaNhomBoSong):
             }
         },
     ]
-    results = db.bonhaptrai.aggregate(pipeline)
+    results = db.bonhaptrai_aggregate(pipeline)
     reportName = "Tong so luong bo du dieu kien tiem "+nhomVaccine["ma"]
     print(reportName)
     for result in results:
@@ -357,3 +393,54 @@ def tongSo_boDuDieuKienTiem_THT(workingDate, nhomVaccine,nhombo = tatCaNhomBoSon
             }
             test_result_collection.baocaothang.insert_one(test_result)
 
+
+
+# Tổng số bò đủ điều kiện tiêm vaccine (một cách tổng quát)
+
+def tongSoBoDuDieuKienTiem_general(workingDate,nhomVaccine):
+    dateToCheck = datetime.strptime(workingDate, date_format)+timedelta(days=1)
+    nhomvaccineID = None
+    nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":nhomVaccine})
+    ngaytuoitoithieu = 0
+    lieutrinhtimthays = db.lieutrinhvaccine_aggregate([
+        {"$match":{
+            "NhomVaccineModel._id":nhomvaccineID
+        }},
+        {"$group":{
+            "_id":"null",
+            "minage":{"$min":"$SoNgayTuoi"},
+            "maxage":{"$max":"$SoNgayTuoi"},
+        }},
+        
+    ])
+    if nhomvaccine is not None:
+        nhomvaccineID = nhomvaccine["_id"]
+    else:
+        print("Không tìm thấy nhóm vaccine "+nhomVaccine)
+    # Xét danh sách bò, tìm những con đủ ngày tiêm vaccine
+    pipeline = [
+        {"$match":{
+            # Không nằm trong nhóm bò k còn ở trại
+            "NhomBo":{
+                "$nin":boKhongOTrai,
+            }
+        }},
+    ]
+
+    reportName = "Tổng số bò được tiêm vaccine "+nhomVaccine["ma"]
+    results = None
+    for result in results:
+        if result != None:
+            danhsachsotai = result["danhsachsotaijoined"]
+            soluong = result["soluong"]
+    test_result = {
+        "NoiDung":reportName,
+        "CreatedAt":datetime.now(),
+        "SoLuong":soluong,
+        "NgayKiemTra":dateToCheck,
+        "DanhSachSoTai":danhsachsotai
+    }
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+    )
+    print(reportName +": "+ str(soluong))

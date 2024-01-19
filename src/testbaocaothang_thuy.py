@@ -12,9 +12,9 @@ page = "https://dev-trangtrai.aristqnu.com/"
 user = "admin"
 password = "admintest"
 
-startDate = "2023-12-01"
-endDate = "2023-12-31"
-today = "2023-12-31"
+startDate = "2024-01-01"
+endDate = "2024-01-17"
+today = "2024-01-17"
 
 # Connect to mongodb
 # client = MongoClient(constants.CONNECTION_STRING)
@@ -97,6 +97,8 @@ giongBo = [
 print("-- Test bao cao thu y --")
 
 """
+"""
+
 #1.1 Tổng số bò bị bệnh
 thuY.tongSo_boBiBenh(startDate, endDate)
 
@@ -177,7 +179,6 @@ thuY.tongSo_boBiBenh_general(startDate,endDate,boHauBiChoPhoi)
 # 3,8	Tổng số bò thịt  13-18 tháng đã và đang điều trị
 thuY.tongSo_boBiBenh_general(startDate,endDate,boNuoiThitBCT13_18)
 
-"""
 # Tổng số bê đã và đang điều trị
 # 4,1	Tổng số bê từ 0-1 tháng đã và đang điều trị
 thuY.tongSo_boBiBenh_general(startDate,endDate,beDuoi1thang)

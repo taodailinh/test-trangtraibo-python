@@ -160,7 +160,7 @@ def tongSo_boBiBenh_general(startdate,enddate,phanloaibo=None,giongbo=None,gioit
     match_condition = {
                 "NgayNhapVien": {"$lt": endDate},
                                 "$or": [
-                {"NgayDieuTri": {"$gte": startDate, "$lt": endDate}},
+                {"NgayKetThucDieuTri": {"$gte": startDate, "$lt": endDate}},
                 {"TinhTrangDieuTri": {"$in": constants.DANGDIEUTRI["danhsach"]}}
             ],
             }
@@ -248,6 +248,129 @@ def tongSo_boBiBenh_general(startdate,enddate,phanloaibo=None,giongbo=None,gioit
     )
     print(reportName + ": " + str(soluong))
 
+
+
+def tongSo_boBiBenh_general_all(startdate,enddate,gioitinh=None):
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
+    # gioihandieutri = startDate - timedelta(days=90)
+    danhsachidloaitru = []
+    pipeline  = [
+        {
+            "$match": {
+                "$or":[{"NgayXuatBan":{"$lte":startDate}},{"NgayChet":{"$lte":startDate}},{"NgayThanhLy":{"$lte":startDate}}],
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachidloaitru": {"$push": "$_id"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "danhsachidloaitru":1
+            }
+        },
+    ]
+    results = db.bonhaptrai_aggregate(pipeline)
+    for result in results:
+        if result != None:
+            danhsachidloaitru = result["danhsachidloaitru"]
+    match_condition = {
+                "NgayNhapVien": {"$lt": endDate},
+                                "$or": [
+                {"NgayKetThucDieuTri": {"$gte": startDate, "$lt": endDate}},
+                {"TinhTrangDieuTri": {"$in": constants.DANGDIEUTRI["danhsach"]}}
+            ],
+            }
+    
+    if phanloaibo is not None:
+        match_condition["Bo.PhanLoaiBo"] = {"$in":phanloaibo["danhsach"]}
+    if giongbo is not None:
+        match_condition["Bo.GiongBo"] = giongbo
+    match_condition_gioitinh = {}
+    if gioitinh is not None:
+        match_condition_gioitinh["matched.0.GioiTinhBe"] = {"$in":gioitinh["danhsach"]}
+    # print(match_condition)
+    pipeline = [
+        {
+            "$match": match_condition
+        },
+        {"$match":{
+            "Bo._id":{"$nin":danhsachidloaitru},
+        },},
+        {"$lookup":{
+            "from":"BoNhapTrai",
+            "let":{"boId":"$Bo._id"},
+            "pipeline":[
+                {
+                    "$match": {
+                    "$expr": {
+                        "$eq": ["$_id", "$$boId"],
+                    }
+                },
+                },                
+                {
+                    "$project":{
+                    "_id":1,
+                    "GioiTinhBe":1,
+                }}
+            ],
+            "as":"matched"
+        }},
+        # {"$match":match_condition_gioitinh},
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+                "matchgioitinh":{"$push":"$matched"}
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "matchgioitinh":1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", "" ]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }}}}]
+    results = db.dieutri_aggregate(pipeline)
+    reportName = "Tổng số " + ((str(phanloaibo["tennhom"])+" ") if phanloaibo is not None else "") + ("bò " if phanloaibo is None else "") + ((str(giongbo)+" ") if giongbo is not None else "")+((str(gioitinh["tennhom"])+" ") if gioitinh is not None else "") + "bị bệnh"
+    matchgioitinh = []
+    danhsachsotai = ""
+    soluong = None
+
+    for result in results:
+        if result != None:
+            soluong = result["soluong"]
+            danhsachsotai = result["danhsachsotaijoined"]
+            matchgioitinh = result["matchgioitinh"]
+
+    test_result = {
+        "NoiDung": reportName,
+        "soluong": soluong,
+        "DanhSachSoTai": danhsachsotai,
+        "matchgioitinh":matchgioitinh,
+    }
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+    )
+    print(reportName + ": " + str(soluong))
+
+
 # 1.2	Tổng số ca mắc bệnh
 def tongSo_caMacBenh(startdate, enddate):
     startDate = datetime.strptime(startdate, date_format)
@@ -284,7 +407,7 @@ def tongSo_caMacBenh(startdate, enddate):
             "$match": {
                 "NgayNhapVien": {"$lt": endDate},
                                 "$or": [
-                {"NgayDieuTri": {"$gte": startDate, "$lt": endDate}},
+                {"NgayKetThucDieuTri": {"$gte": startDate, "$lt": endDate}},
                 {"TinhTrangDieuTri": {"$in": constants.DANGDIEUTRI["danhsach"]}}
             ]
                     ,
@@ -730,7 +853,7 @@ def tongSo_boDaDangDieuTri_boVoBeoNho(
         {
             "$match": {
                 "NgayNhapVien": {"$lt": endDate},
-                "TinhTrangDieuTri": {"$in": constants.DANGDIEUTRI["danhsach"]},
+                # "TinhTrangDieuTri": {"$in": constants.DANGDIEUTRI["danhsach"]}, #sot bo da khoi benh 
                 "NgayKetThucDieuTri": {
                             "$gte": startDate,
                             "$lt": endDate,

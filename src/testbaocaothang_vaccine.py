@@ -96,11 +96,12 @@ vaccinethongke = ["UKT",
 # "VDNC","LMLM","LEPTOSPIRIOSIS","NOINGOAIKYSINHTRUNG","VIEMRONVIEMPHOI","CAUTRUNG","TIEUCHAY","UKT 7in1"
 ]
 
-
+"""
 for loaivaccine in vaccinethongke:
     # vaccine.tongSo_boDuocTiemVaccine(client,db,"ThongTinTiemVaccine",startDate,endDate,ws,nhomVaccine[loaivaccine])
     vaccine.tongSo_boDuDieuKienTiem(today,nhomVaccine[loaivaccine])
 
 vaccine.tongSo_boDuDieuKienTiem_THT(today,nhomVaccine["THT"])
+"""
 
-
+vaccine.tongSoBoDuDieuKienTiem_general(today,"THT")

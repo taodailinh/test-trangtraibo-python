@@ -1,43 +1,77 @@
 from pymongo import MongoClient
 from datetime import datetime, timedelta
+from bson.son import SON
 import time
+from client import db
 
 date_format = "%Y-%m-%d"
 
-def tongdanbo(client: MongoClient,databaseName, collectionName,nhombo,phanloaibo, worksheet):
-    db = client[databaseName]
-    collection = db[collectionName]
+def tongdanbo():
     pipeline = [
-        {"$match":{"$and":[{"NhomBo":{"$in":nhombo["danhsach"]}},{"PhanLoaiBo":{"$in":phanloaibo["danhsach"]}}]}},
+        {"$match":{
+            "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]}
+        }},
         {"$group":{
-            "_id":None,
+            "_id":"$PhanLoaiBo",
             "soluong":{"$count":{}},
-            "danhsachsotai":{"$push":"$SoTai"}
+            "phanloaibo":{"$first":"$PhanLoaiBo"}
         }},
         {"$project":{
             "soluong":1,
-            "danhsachsotaijoined":{
-                "$reduce": {
-                        "input": "$danhsachsotai",
-                        "initialValue": "",
-                        "in": {
-                            "$concat": [
-                                "$$value",
-                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
-                            ]
-                        },
-                    }}
+            "phanloaibo":1,
+            # "danhsachsotaijoined":{
+            #     "$reduce": {
+            #             "input": "$danhsachsotai",
+            #             "initialValue": "",
+            #             "in": {
+            #                 "$concat": [
+            #                     "$$value",
+            #                     {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+            #                     "$$this",
+            #                 ]
+            #             },
+            #         }}
         }}
     ]
-    results = collection.aggregate(pipeline)
-    title = "Số lượng "+nhombo["tennhom"]+phanloaibo["tennhom"]+": "
+    tongdan = 0
+    startTime = time.time()
+    results = db.bonhaptrai_aggregate(pipeline)
     for result in results:
-        print(title+str(result["soluong"]))
-        worksheet.append([title,result["soluong"],result["danhsachsotaijoined"]])
+        tongdan += result["soluong"]
+        print("Soluong "+(result["phanloaibo"] if result["phanloaibo"] is not None else "")+": "+str(result["soluong"]))
+    print("Tong dan: "+str(tongdan))
+    endTime = time.time()
+    print("Tong thoi gian: "+str(endTime-startTime))
 
 
-
+def biendongdan(startdate,enddate):
+    startDate = datetime.strptime(startdate,date_format)
+    endDate = datetime.strptime(enddate,date_format)+timedelta(days=1)
+    pipeline = [
+        {"$match":{
+            "NgaySinh":{
+                "$ne":None,
+                "$gte":startDate,
+                "$lt":endDate
+            }
+        }},
+        {"$group":{
+            "_id":{
+                "year":{"$year":"$NgaySinh"},
+                "month":{"$month":"$NgaySinh"},
+                "day":{"$dayOfMonth":"$NgaySinh"},
+            },
+            "soluong":{"$sum":1}
+        }},
+        {"$sort":SON([("_id.year", 1), ("_id.month", 1), ("_id.day", 1)])},
+        {"$project":{
+            "_id":1,
+            "soluong":1
+        }}
+    ]
+    results = db.bonhaptrai_aggregate(pipeline)
+    for result in results:
+        print("Ngay"+str(result["_id"]["day"])+":"+str(result["soluong"]))
 
 def printAllNongTruong(
     client: MongoClient, databaseName, collectionName="NongTruongCo"

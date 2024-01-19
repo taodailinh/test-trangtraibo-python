@@ -1,25 +1,10 @@
-
-from openpyxl import Workbook
 import os
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
 import time
 from datetime import datetime
-from selenium.webdriver import Keys, ActionChains
 from pymongo import MongoClient
 import test_dashboard.query as querydashboard
-import constants
 
 
-os.environ["PATH"] += "C:/Users/taoda/test/selenium/env"
-
-client = MongoClient(constants.CONNECTION_STRING)
-db = constants.DB
-startDate = "2023-09-24"
-endDate = "2023-10-24"
 
 tatCaNhomBo = {
     "tennhom": "bò",
@@ -56,8 +41,8 @@ tatCaPhanLoai = {"tennhom":"","danhsach":["BoMoiPhoi",
         "",
 ]}
 
-wb = Workbook()
-ws = wb.active
+# querydashboard.tongdanbo()
+querydashboard.biendongdan("2023-12-01","2023-12-31")
 
 # Tìm 1 con bò bằng sô tai và in số chip
 # for i in boNhapTrai.find({"SoTai": "F040923"}):
@@ -65,7 +50,7 @@ ws = wb.active
 
 
 # querydashboard.tongdanbo(client,db,"BoNhapTrai",tatCaNhomBoSong,tatCaPhanLoai,ws)
-querydashboard.calArea(client,db)
+# querydashboard.calArea(client,db)
 
 danhsachhangmuccongviec = [
     " Trồng cỏ pangola",
@@ -357,21 +342,32 @@ phanvoco = [
     "Phân Urê",
  ]
 
+# Thong tin tong dan
+
+
+# Phoi giong
+
+# Thu y
+
+# Chuong trai
+
+
+
 
 # for hangmuc in danhsachhangmuccongviec:
 #     querydashboard.dientichco_theohangmuccongviec(client,db,hangmuc,startDate,endDate,collection="ChiTietCongViecDongCo")
 
 # Tổng diện tích các lô cỏ thực hiện tưới nước
-querydashboard.dientichco_theohangmuccongviec(client,db,["Tưới nước"],startDate,endDate,collection="ChiTietCongViecDongCo")
+# querydashboard.dientichco_theohangmuccongviec(client,db,["Tưới nước"],startDate,endDate,collection="ChiTietCongViecDongCo")
 
 
 # querydashboard.dientichco_bonphanvoco(client,db,danhsachhangmuccongviec_bonphanvoco,startDate,endDate,collection="ChiTietCongViecDongCo")
 
-querydashboard.dientichco_tegoc(client,db,danhsachhangmuccongviec_tegoc,startDate,endDate,collection="ChiTietCongViecDongCo")
+# querydashboard.dientichco_tegoc(client,db,danhsachhangmuccongviec_tegoc,startDate,endDate,collection="ChiTietCongViecDongCo")
 
-querydashboard.tongkhoiluong_phanvoco(client,db,phanvoco,startDate,endDate,collection="ChiTietCongViecDongCo")
+# querydashboard.tongkhoiluong_phanvoco(client,db,phanvoco,startDate,endDate,collection="ChiTietCongViecDongCo")
 
-querydashboard.tongdientich_chantha(client,db,startDate,endDate)
+# querydashboard.tongdientich_chantha(client,db,startDate,endDate)
 
 """
 # Add this to keep webdriver stay running
@@ -411,6 +407,5 @@ time.sleep(10)
 time.sleep(10)
 """
 
-fileName = "test_dashboard" + datetime.now().strftime("%Y%B%d%H%M%S.xlsx")
-wb.save(fileName)
+
 # driver.quit()

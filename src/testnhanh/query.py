@@ -3,8 +3,11 @@ from datetime import datetime
 import time
 from openpyxl import Workbook
 import sys
+from client import db, test_result_collection
 
 date_format = "%Y-%m-%d"
+
+
 
 giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
 
@@ -43,8 +46,20 @@ tatCaPhanLoai = {"tennhom":"","danhsach":["BoMoiPhoi",
 # Kết nối db
 # client = MongoClient("mongodb://thagrico:Abc%40%23%24123321@45.119.84.161:27017/")
 # db = client["quanlytrangtrai_0910"]
-
-
+testResultId = None
+duLieuChuongTrai = test_result_collection.query.find_one(
+    {"LoaiDuLieu": "ChuongTrai"}
+)
+if duLieuChuongTrai is None:
+    duLieuChuongTrai = test_result_collection.query.insert_one(
+        {"LoaiDuLieu": "ChuongTrai", "CreatedAt": datetime.now(), "KetQua": []}
+    )
+    testResultId = duLieuChuongTrai.inserted_id
+else:
+    testResultId = duLieuChuongTrai["_id"]
+    test_result_collection.query.update_one(
+        {"_id": testResultId}, {"$set": {"KetQua": [], "UpdatedAt": datetime.now()}}
+    )
 
 # Tổng số bò sai lứa đẻ
 def tongSoBo_saiLuaDe(
@@ -258,3 +273,56 @@ def lichsuchuyenchuong(client: MongoClient,
     for result in results:
         i+=1
         print(str(i)+". "+str(result["DanhSachChuyens"]["CreatedAt"])+", loại chuyển:"+result["LoaiDieuChuyen"]+", nghiệp vụ chuyển: "+str(result["NghiepVu"]))
+
+
+def timconbo(sotai):
+    startTime = time.time()
+    print("Số tai tìm: "+sotai)
+    conbo= db.bonhaptrai_find({"$text":{"$search":sotai}})
+    for bo in conbo:
+        print("Số tai tìm thấy: "+bo["SoTai"]) 
+    endTime = time.time()
+    print("Thời gian: "+str(endTime-startTime))
+
+
+def findBoTheoOChuong(ochuong):
+    match_condition = {
+                    "OChuongHienTai.TenOChuong": ochuong,
+            }
+    pipeline = [
+        {
+            "$match": match_condition
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+                "danhsachid": {"$push": "$_id"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachid":1,
+            }
+        },
+    ]
+    startTime = time.time()
+    results = db.bonhaptrai_aggregate(pipeline)
+    reportName = "Tổng số bo o o chuong " + ochuong+": "
+    danhsachid = []
+    soluong = None
+
+    for result in results:
+        if result != None:
+            soluong = result["soluong"]
+            danhsachid = result["danhsachid"]
+            print(len(danhsachid))
+            for _id in danhsachid:
+                print(str(_id))
+    endTime = time.time()
+    print(reportName + ":    " + str(soluong))
+    print("Tong thoi gian: "+str(endTime-startTime))
+    return danhsachid

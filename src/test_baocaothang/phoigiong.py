@@ -26,7 +26,7 @@ gioiTinhTatCa = {
     "tennhom": "",
     "danhsach": ["Đực", "Cái", "Không xác định", None, ""],
 }
-
+testResultId = None
 # test_result_collection.baocaothang.delete_many({"LoaiBaoCao": "PhoiGiong"})
 testResultDocument = test_result_collection.baocaothang.find_one(
     {"LoaiBaoCao": "PhoiGiong"}

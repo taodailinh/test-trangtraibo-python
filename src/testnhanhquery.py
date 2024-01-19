@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import testnhanh.query as query
+import testnhanh.query_chuongtrai as chuongtrai
+
 import constants
 import client
 from client import db, test_result_collection, changeFarm
@@ -89,7 +91,6 @@ lanPhoi2 = {"min":2,"max":2}
 lanPhoi3 = {"min":3,"max":999}
 
 """
-"""
 # query.tongSoBo_saiLuaDe(client,db,"BoNhapTrai",startDate,endDate,ws)
 
 # query.danhsachbe(client,db,"BoNhapTrai",startDate,endDate,ws,nhombo=nhombovabe)
@@ -103,5 +104,17 @@ results = db.dieutri.find({}).distinct("Bo.PhanLoaiBo")
 
 for result in results:
     print(result)
+"""
+
+# query.timconbo("F00001")
+# query.timconbo("F00001")
+# query.timconbo("M-2304378")
+# query.timconbo("2304378")
+
 # Close mongo connection
 # client.close()
+
+
+# query.findBoTheoOChuong("B6.01")
+
+chuongtrai.duLieuChuongTrai()

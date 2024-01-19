@@ -30,8 +30,14 @@ class DB:
     def dieutri_aggregate(self, pipeline):
         return self.dieutri.aggregate(pipeline)
 
+    def bonhaptrai_find(self, condition):
+        return self.bonhaptrai.find(condition)
+
     def bonhaptrai_aggregate(self, pipeline):
         return self.bonhaptrai.aggregate(pipeline)
+
+    def bonhaptrai_count(self, condition):
+        return self.bonhaptrai.countDocuments(condition)
 
     def canbo_aggregate(self, pipeline):
         return self.canbo.aggregate(pipeline)
@@ -79,6 +85,7 @@ test_result_db = client[constants.TEST_RESULT_DB]
 class DB_TEST_RESULT:
     def __init__(self, trai=0):
         self.baocaothang = test_result_db["BaoCaoThang" + constants.TENANTS[trai]]
+        self.query = test_result_db["Query" + constants.TENANTS[trai]]
 
     # Đổi trại
     def changeFarm(self, trai):

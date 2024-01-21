@@ -1218,8 +1218,16 @@ def tongSoBoGieoTinhNhanTaoDuocKhamThai(
 ):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    gioiHanPhoiDau = startDate.replace(day=1, month=startDate.month - 2)
-    gioiHanPhoiCuoi = startDate.replace(day=1, month=startDate.month - 1) - timedelta(
+    year = startDate.year
+    month = startDate.month
+    if month < 3:
+        month += 12
+        year -= 1
+    gioiHanPhoiDau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -= 1
+    gioiHanPhoiCuoi = startDate.replace(year=year,day=1, month=month - 1) - timedelta(
         days=1
     )
     danhsachboduocphoi = []
@@ -2623,8 +2631,16 @@ def tyLe_DauThai_theoLanPhoi(
     print("Lần phối" + str(lanPhoi["min"]) + "-" + str(lanPhoi["max"]))
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    ngayPhoiDau = startDate.replace(day=1, month=startDate.month - 2)
-    ngayPhoiCuoi = startDate.replace(day=1, month=startDate.month - 1) - timedelta(
+    year = startDate.year
+    month = startDate.month
+    if month < 3:
+        month += 12
+        year -= 1
+    ngayPhoiDau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -= 1
+    ngayPhoiCuoi = startDate.replace(year=year,day=1, month=month - 1) - timedelta(
         days=1
     )
     pipeline = [
@@ -3283,8 +3299,16 @@ def tyLeDauThai_gieoTinh_theoGiongBo(startdate, enddate, giongbo, lanPhoi):
     print("Lần phối" + str(lanPhoi["min"]) + "-" + str(lanPhoi["max"]))
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    ngayPhoiDau = startDate.replace(day=1, month=startDate.month - 2)
-    ngayPhoiCuoi = startDate.replace(day=1, month=startDate.month - 1) - timedelta(
+    year = startDate.year
+    month = startDate.month
+    if month < 3:
+        month += 12
+        year -= 1
+    ngayPhoiDau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -= 1
+    ngayPhoiCuoi = startDate.replace(year=year,day=1, month=month - 1) - timedelta(
         days=1
     )
     pipeline = [
@@ -3445,8 +3469,16 @@ def tyLe_DauThai_ghepDuc_theoGiongBo(startdate, enddate, giongbo):
     print("Giống bò: " + giongbo)
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    ngayGhepDucDau = startDate.replace(day=1, month=startDate.month - 2)
-    ngayGhepDucCuoi = startDate.replace(day=1, month=startDate.month - 1) - timedelta(
+    year = startDate.year
+    month = startDate.month
+    if month < 3:
+        month += 12
+        year -= 1
+    ngayGhepDucDau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -= 1
+    ngayGhepDucCuoi = startDate.replace(year=year,day=1, month=month - 1) - timedelta(
         days=1
     )
     # Tìm bò ghép đực trong khoảng thời gian đó

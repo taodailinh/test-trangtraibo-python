@@ -13,9 +13,9 @@ page = "https://test-trangtrai.aristqnu.com/"
 user = "admin"
 password = "admintest"
 
-startDate = "2023-12-01"
-endDate = "2023-12-31"
-today = "2023-12-31"
+startDate = "2024-01-01"
+endDate = "2024-01-31"
+today = "2024-01-20"
 
 # Connect to mongodb
 client = MongoClient(constants.CONNECTION_STRING)

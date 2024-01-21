@@ -125,6 +125,7 @@ thongTinDan.tongSoBo(startDate,endDate,"#1",boChoPhoi)
 """
 
 """
+"""
 # 1. Số bò chờ phối
 thongTinDan.soBoChoPhoi()
 
@@ -197,7 +198,7 @@ thongTinDan.tongSoBo(today,"#22", boVoBeoLon)
 
 # 23	Tăng trọng bình quân của BVB lớn
 thongTinDan.tangTrongBinhQuan(startDate, endDate, boVoBeoLon, "#23")
-"""
+
 # 24	Tổng số bò sinh sản nhập trại
 thongTinDan.tongSo_nhapTrai_boSinhSan(startDate, endDate)
 

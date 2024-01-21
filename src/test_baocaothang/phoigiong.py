@@ -3295,7 +3295,7 @@ def tyLe_DauThai_ghepDuc_theoGiongBo_ver1(
         print("tong thoi gian: " + str(finishTime - startTime))
 
 
-def tyLeDauThai_gieoTinh_theoGiongBo(startdate, enddate, giongbo, lanPhoi):
+def tyLeDauThai_gieoTinh_theoGiongBo_ver1(startdate, enddate, giongbo, lanPhoi):
     print("Lần phối" + str(lanPhoi["min"]) + "-" + str(lanPhoi["max"]))
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
@@ -3424,7 +3424,7 @@ def tyLeDauThai_gieoTinh_theoGiongBo(startdate, enddate, giongbo, lanPhoi):
     if soLuongDuocPhoi == 0:
         print("Không có bò được phối")
     else:
-        results = db.bonhaptrai.aggregate(pipeline)
+        results = db.bonhaptrai_aggregate(pipeline)
         soLuongDauThai = 0
 
         title2 = (
@@ -3464,6 +3464,294 @@ def tyLeDauThai_gieoTinh_theoGiongBo(startdate, enddate, giongbo, lanPhoi):
     endTime = time.time()
     print("Tổng thoi gian: " + str(endTime - startTime))
 
+
+
+
+def tyLeDauThai_gieoTinh_theoGiongBo(startdate, enddate, giongbo, lanPhoi):
+    print("Lần phối" + str(lanPhoi["min"]) + "-" + str(lanPhoi["max"]))
+    startDate = datetime.strptime(startdate, date_format)
+    endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
+    year = startDate.year
+    month = startDate.month
+    if month < 3:
+        month += 12
+        year -= 1
+    ngayPhoiDau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -= 1
+    ngayPhoiCuoi = startDate.replace(year=year,day=1, month=month - 1)
+    # Lấy những con có phối giống trong thời gian báo cáo
+    pipeline = [
+        {
+            "$match": {
+                        "LanPhoi": {"$gte": lanPhoi["min"], "$lte": lanPhoi["max"]},
+                        "NgayPhoi": {"$gte": ngayPhoiDau, "$lt": ngayPhoiCuoi},
+                        "GhepDucKhongQuaPhoi": False,
+                    }
+        },
+        {
+            "$group": {
+                "_id": "$Bo._id",
+                "SoTai":{"$first":"$Bo.SoTai"}
+            }
+        },
+        {
+            "$lookup":{
+                "from": "BoNhapTrai",
+                "let": {"boId": "$_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {
+                                "$eq": ["$_id", "$$boId"],
+                            }
+                        }
+                    },
+                    {"$project": {"GiongBo": 1}},
+                ],
+                "as": "matched",
+
+            }
+        },
+        {
+            "$match":{
+                "matched.GiongBo":giongbo
+            }
+        },
+        {
+            "$group":{
+                "_id":"null",
+                "danhsachsotai":{
+                    "$push":"$SoTai"
+                },
+                "soluong":{
+                    "$count":{}
+                }
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotai":1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = db.phoigiong_aggregate(pipeline)
+    title1 = "Số lượng " + " bò phối lần " + str(lanPhoi["min"])
+    soLuongDuocPhoi = 0
+    danhSachSoTaiPhoi = ""
+    danhSachSoTaiPhoiarray=[]
+    for result in results:
+        if result != None:
+            soLuongDuocPhoi = result["soluong"]
+            danhSachSoTaiPhoi = result["danhsachsotaijoined"]
+            danhSachSoTaiPhoiarray=result["danhsachsotai"]
+            print(title1 + ": " + str(soLuongDuocPhoi))
+
+    # lấy danh sách những con có lần thực hiện phối cuối là lần đó
+    pipeline = [
+        {
+            "$match": {
+                "NgayPhoi": {"$gte": ngayPhoiDau, "$lt": endDate},
+            }
+        },
+        {
+            "$group": {
+                "_id": "$Bo._id",
+                "lanphoi": {
+                    "$push": {
+                        "NgayPhoi": "$NgayPhoi",
+                    }
+                },
+                "SoTai":{
+                    "$first":"$Bo.SoTai"
+                }
+            }
+        },
+        {
+            "$addFields": {
+                "ngayphoicuoi": {
+                    "$reduce": {
+                        "input": "$lanphoi",
+                        "initialValue": {"NgayPhoi": None},
+                        "in": {
+                            "$cond": [
+                                {
+                                    "$or": [
+                                        {
+                                            "$gt": [
+                                                "$$this.NgayPhoi",
+                                                "$$value.NgayPhoi",
+                                            ]
+                                        },
+                                        {"$eq": ["$$value.NgayPhoi", None]},
+                                    ]
+                                },
+                                "$$this",
+                                "$$value",
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+        {
+            "$match": {
+                "SoTai": {"$in": danhSachSoTaiPhoiarray},
+                "ngayphoicuoi.GhepDucKhongQuaPhoi": False,
+                "ngayphoicuoi.LanPhoi":{
+                    "$gte": lanPhoi["min"], "$lte": lanPhoi["max"],
+                },
+                "ngayphoicuoi.NgayPhoi":{
+                    "$gte": ngayPhoiDau, "$lt": ngayPhoiCuoi,
+                }
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotai": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+
+    danhSachBoPhoiCuoiArray = []
+    danhSachBoPhoiCuoiArrayJoined = ""
+
+    if soLuongDuocPhoi == 0:
+        print("Không có bò được phối")
+    else:
+        results = db.phoigiong_aggregate(pipeline)
+        for result in results:
+            danhSachBoPhoiCuoiArray = result["danhsachsotai"]
+            print("Số lượng bò phối cuối là lần thức "+str(lanphoi)+": "+str(result["soluong"]))
+            danhSachBoPhoiCuoiArrayJoined = result["danhsachsotaijoined"]
+
+    # pipeline tính số lượng bò có thai
+    pipeline = [
+        {
+            "$match": {
+                        "NgayKham": {"$gte": ngayPhoiCuoi, "$lt": endDate},
+                        "CoThai": True,
+                        "Bo.SoTai":{
+                            "$in":danhSachBoPhoiCuoiArray
+                        }
+            }
+        },
+        {
+            "$group": {
+                "_id": "null",
+                "soluong": {"$count": {}},
+                "danhsachsotai": {"$push": "$Bo.SoTai"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "soluong": 1,
+                "danhsachsotaijoined": {
+                    "$reduce": {
+                        "input": "$danhsachsotai",
+                        "initialValue": "",
+                        "in": {
+                            "$concat": [
+                                "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this",
+                            ]
+                        },
+                    }
+                },
+            }
+        },
+    ]
+
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    tyLeDauThai = None
+    danhSachSoTaiDauThai = ""
+    if soLuongDuocPhoi == 0:
+        print("Không có bò được phối")
+    else:
+        results = db.khamthai_aggregate(pipeline)
+        soLuongDauThai = 0
+
+        title2 = (
+            "Số lượng "
+            + "bò phối lần "
+            + str(lanPhoi["min"])
+            + (" đậu thai ngay lần phối đó")
+        )
+        for result in results:
+            if result != None:
+                soLuongDauThai = result["soluong"]
+                print(title2 + ": " + str(soLuongDauThai))
+                tyLeDauThai = "{:.1%}".format(soLuongDauThai / soLuongDuocPhoi)
+                danhSachSoTaiDauThai = result["danhsachsotaijoined"]
+                print(
+                    "Tỷ lệ đậu thai lần phối thứ "
+                    + str(lanPhoi["min"])
+                    + " của giống bò "
+                    + giongbo
+                    + ": "
+                    + str(tyLeDauThai)
+                )
+    test_result = {
+        "NoiDung": "Tỷ lệ đậu thai lần phối "
+        + str(lanPhoi["min"])
+        + " của giống bò "
+        + giongbo,
+        "DanhSachSoTaiPhoi": danhSachSoTaiPhoi,
+        "SoLuongDuocPhoi": soLuongDuocPhoi,
+        "DanhSachKhongBiPhoiLai":danhSachBoPhoiCuoiArray,
+        "TyLeDauThai": tyLeDauThai,
+        "DanhSachSoTaiDauThai": danhSachSoTaiDauThai,
+    }
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+    )
+
+    endTime = time.time()
+    print("Tổng thoi gian: " + str(endTime - startTime))
 
 def tyLe_DauThai_ghepDuc_theoGiongBo(startdate, enddate, giongbo):
     print("Giống bò: " + giongbo)

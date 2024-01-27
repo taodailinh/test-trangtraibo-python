@@ -14,9 +14,9 @@ page = "https://dev-trangtrai.aristqnu.com/"
 user = "admin"
 password = "admintest"
 
-startDate = "2023-12-01"
-endDate = "2023-12-28"
-today = "2023-12-28"
+startDate = "2024-01-01"
+endDate = "2024-01-26"
+today = "2024-01-26"
 
 # Connect to mongodb
 # client = MongoClient(constants.CONNECTION_STRING)
@@ -125,7 +125,6 @@ thongTinDan.tongSoBo(startDate,endDate,"#1",boChoPhoi)
 """
 
 """
-"""
 # 1. Số bò chờ phối
 thongTinDan.soBoChoPhoi()
 
@@ -164,11 +163,12 @@ thongTinDan.tongSoBo(today, "#11", boHauBi, gioiTinhDuc)
 
 # 12	Tổng số bê đực nuôi thịt BCT bị 9- 12
 thongTinDan.tongSoBo(today, "#12", boNuoiThitBCT9_12, gioiTinhDuc)
+"""
 
 
 # 13	Tổng số bê cái nuôi thịt BCT bị 9- 12 tháng
 thongTinDan.tongSoBo(today, "#13", boNuoiThitBCT9_12, gioiTinhCai)
-
+"""
 # 14	Tổng số bò cái hậu bị BCT 13-18 tháng
 thongTinDan.tongSoBo(today, "#14", boHauBiChoPhoi, gioiTinhCai)
 
@@ -224,7 +224,7 @@ thongTinDan.tongSo_bebenh_chothanhly(today)
 
 # 31	Tổng số bò bệnh đang chờ thanh lý
 thongTinDan.tongSo_bobenh_chothanhly(today)
-"""
+
 """
 
 """

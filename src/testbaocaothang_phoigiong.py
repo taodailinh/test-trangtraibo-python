@@ -15,7 +15,7 @@ password = "admintest"
 
 startDate = "2024-01-01"
 endDate = "2024-01-31"
-today = "2024-01-20"
+today = "2024-01-27"
 
 # Connect to mongodb
 client = MongoClient(constants.CONNECTION_STRING)
@@ -92,6 +92,8 @@ lanPhoi3 = {"min": 3, "max": 999}
 
 
 """
+
+
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 phoiGiong.tongSoBoThanhLy_BoDucGiong(startDate, endDate, boDucGiong)
 
@@ -123,18 +125,17 @@ phoiGiong.tongSoBoGhepDuc(startDate, endDate)
 
 # 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
 phoiGiong.tongSoBoGieoTinhNhanTaoDuocKhamThai(startDate, endDate)
-
 # 10	Tổng số bò xử lý sinh sản có thai
-phoiGiong.tongSo_coThai_sauXLSS(startDate, endDate)
-
+# phoiGiong.tongSo_coThai_sauXLSS(startDate, endDate)
+phoiGiong.tongSo_coThai_sauXLSS_ver3(startDate, endDate)
 # 11	Tổng số bò xử lý sinh sản không có thai
-phoiGiong.tongSo_khongThai_sauXLSS("không thai có xlss",startDate,endDate)
+phoiGiong.tongSo_khongThai_sauXLSS_ver2(startDate,endDate)
 
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
-phoiGiong.tongSo_coThai_sauPhoi_tuNhien("lên giống tự nhiên được gieo tinh nhân tạo có thai",startDate,endDate)
+phoiGiong.tongSo_coThai_sauPhoi_tuNhien_ver2(startDate,endDate)
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
-# phoiGiong.tongSo_khongThai_sauPhoi_tuNhien(startDate,endDate)
+phoiGiong.tongSo_khongThai_sauPhoi_tuNhien_ver2(startDate,endDate)
 
 # 14	Tổng số bò ghép đực được khám thai
 # phoiGiong.tongSo_duocKhamThai_sauGhepDuc(startDate,endDate)
@@ -155,6 +156,15 @@ phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi2)
 # 19	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 3
 phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi3)
 """
+phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi1)
+phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi2)
+phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi3)
+"""
+
+phoiGiong.tyLe_dauThai_trungBinh(startDate,endDate)
+
+
+
 for bo in giongBo:
     print("Giống bò " + bo + " :")
     # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò lần 1
@@ -175,7 +185,7 @@ for bo in giongBo:
     )
 
     phoiGiong.khoangCachGiua2LuaDe(bo)
-"""
+
 """
 
 # 24	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò Drougth master lần 1

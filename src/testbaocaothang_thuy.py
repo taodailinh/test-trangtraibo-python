@@ -13,8 +13,8 @@ user = "admin"
 password = "admintest"
 
 startDate = "2024-01-01"
-endDate = "2024-01-17"
-today = "2024-01-17"
+endDate = "2024-01-26"
+today = "2024-01-26"
 
 # Connect to mongodb
 # client = MongoClient(constants.CONNECTION_STRING)
@@ -126,19 +126,19 @@ thuY.tongSo_boBiBenh_general(startDate,endDate,boVoBeoTrung)
 thuY.tongSo_boBiBenh_general(startDate,endDate,boVoBeoLon)
 
 # 2,5	Tổng số bò vỗ béo đã điều trị Khỏi bệnh
-thuY.tongSo_boKhoiBenh_boVoBeo(startDate, endDate)
+# thuY.tongSo_boKhoiBenh_boVoBeo(startDate, endDate)
 thuY.tongSo_boKhoiBenh_general(startDate,endDate,phanloaibo = boVoBeo)
 
 # 2,6	Tổng số bò vỗ béo đã điều trị không khỏi bệnh
-thuY.tongSo_boKhongKhoiBenh_boVoBeo(startDate, endDate)
+# thuY.tongSo_boKhongKhoiBenh_boVoBeo(startDate, endDate)
 thuY.tongSo_boKhongKhoiBenh_general(startDate,endDate,phanloaibo = boVoBeo)
 
 # 2,7	Tổng số bò vỗ béo mắc bệnh đã đề nghị bán thanh lý
-thuY.tongSo_boDaDeXuatThanhLy_boVoBeo(startDate, endDate)
+# thuY.tongSo_boDaDeXuatThanhLy_boVoBeo(startDate, endDate)
 thuY.tongSo_boDaDeXuatThanhLy_general(startDate,endDate,phanloaibo = boVoBeo)
 # Tổng số bò sinh sản đã và đang điều trị
 # 3,1	Tổng số bò chờ phối đang điều trị
-thuY.tongSo_boDaDangDieuTri_boChoPhoi(startDate, endDate)
+# thuY.tongSo_boDaDangDieuTri_boChoPhoi(startDate, endDate)
 thuY.tongSo_boBiBenh_general(startDate,endDate,boChoPhoi)
 
 
@@ -166,7 +166,7 @@ thuY.tongSo_boDaDangDieuTri_boNuoiConLon(startDate, endDate
 thuY.tongSo_boBiBenh_general(startDate,endDate,boMeNuoiConLon)
 
 # 3,6	Tổng số bò hậu bị  9-12 tháng đã và đang điều trị
-thuY.tongSo_boDaDangDieuTri_boHauBi(startDate, endDate)
+# thuY.tongSo_boDaDangDieuTri_boHauBi(startDate, endDate)
 thuY.tongSo_boBiBenh_general(startDate,endDate,boHauBi)
 
 

@@ -934,7 +934,7 @@ def tangTrongBinhQuan(
         {"$project": {"_id": 0, "soluong": 1, "danhsachsotai": 1}},
     ]
     danhsachbo = []
-    botimthays = db.bonhaptrai.aggregate(pipeline)
+    botimthays = db.bonhaptrai_aggregate(pipeline)
     for botimthay in botimthays:
         if botimthay != None:
             danhsachbo = botimthay["danhsachsotai"]
@@ -959,8 +959,8 @@ def tangTrongBinhQuan(
         },
     ]
     startTime = time.time()
-    results = db.canbo.aggregate(pipeline)
-    reportName = stt + ". " + "Trọng lượng bình quân của " + phanloaibo["tennhom"]
+    results = db.canbo_aggregate(pipeline)
+    reportName = stt + ". " + "Tăng trọng bình quân của " + phanloaibo["tennhom"]
     total_results = 0
     total_difference = 0
     for result in results:

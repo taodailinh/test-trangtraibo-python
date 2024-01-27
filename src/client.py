@@ -19,6 +19,7 @@ class DB:
         self.vaccine = traibo_db["ThongTinTiemVaccine" + constants.TENANTS[trai]]
         self.lieutrinhvaccine = traibo_db["LieuTrinhVaccine" + constants.TENANTS[trai]]
         self.nhomvaccine = traibo_db["NhomVaccineModel"+constants.TENANTS[trai]]
+        self.loaivaccine = traibo_db["DanhMucVaccineModel" + constants.TENANTS[trai]]
         self.canbo = traibo_db["CanBo" + constants.TENANTS[trai]]
 
     def phoigiong_aggregate(self, pipeline):
@@ -50,12 +51,16 @@ class DB:
         
     def thanhly_aggregate(self,pipeline):
         return self.xlss.aggregate(pipeline)
+
+    def nhomvaccine_find(self,pipeline):
+        return self.nhomvaccine.find_one(pipeline)
+
     
     def nhomvaccine_aggregate(self,pipeline):
         return self.nhomvaccine.aggregate(pipeline)
     
-    def nhomvaccine_find(self,condition):
-        return self.nhomvaccine.find_one(condition)
+    def loaivaccine_aggregate(self,condition):
+        return self.loaivaccine.aggregate(condition)
 
     def lieutrinhvaccine_aggregate(self,pipeline):
         return self.lieutrinhvaccine.aggregate(pipeline)

@@ -44,7 +44,7 @@ class DB:
         return self.canbo.aggregate(pipeline)
     
     def vaccine_aggregate(self,pipeline):
-        return self.vaccine.aggregate(pipeline)
+        return self.vaccine.aggregate(pipeline,allowDiskUse=True)
 
     def xlss_aggregate(self,pipeline):
         return self.xlss.aggregate(pipeline)

@@ -718,7 +718,6 @@ def danhsachbodatiem(workingDate,nhomVaccine):
                 "lantiemcuoi":1,
             }
         },
-        {"$limit":10}
     ]
     soluong = 0
     thongtintiemvaccine = [] 
@@ -767,11 +766,11 @@ def lichSuTiem(checkdate,nhomVaccine):
     botrongtrai = db.bonhaptrai_aggregate([
         {"$match":{
             "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]},
-            "NgaySinh":{"$lt":workingDate-timedelta(days=3)}
         }},
         {"$project":{
             "_id":1,
-            "SoTai":1
+            "SoTai":1,
+            "NgaySinh":1
         }}
     ])
     b = time.time()
@@ -802,3 +801,151 @@ def lichSuTiem(checkdate,nhomVaccine):
     endTime = time.time()
     print("Hoàn tất tính danh sách bò cần tiêm: "+str(endTime-startTime))
 
+
+def danhsachbodudieukientiem(vaccine,ngaykiemtra):
+    datetocheck = datetime.strptime(ngaykiemtra,date_format)
+    # Lấy danh sách ngày tiêm của liệu trình
+    nhomvaccineID = None
+    nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":vaccine})
+    if nhomvaccine is not None:
+        nhomvaccineID = nhomvaccine["_id"]
+        print("Nhóm vaccine: "+nhomvaccine["TenNhomVaccine"])
+    else:
+        print("Không tìm thấy nhóm vaccine "+nhomVaccine)
+    ngaydudieukientiem = []
+    lieutrinhtimthays = db.lieutrinhvaccine_aggregate([
+        {"$match":{
+            "NhomVaccineModel._id":nhomvaccineID
+        }},
+        {"$group":{
+            "_id":"null",
+            "solieutrinh":{"$count":{}},
+            "ngaytuoi":{"$push":"$SoNgayTuoi"}
+        }},
+        {"$project":{
+            "_id":0,
+            "solieutrinh":1,
+            "ngaytuoi":1
+        }}
+    ])
+    for lieutrinhtimthay in lieutrinhtimthays:
+        if lieutrinhtimthay is not None:
+            ngaydudieukientiem = [datetocheck - timedelta(days=number) for number in lieutrinhtimthay["ngaytuoi"]]
+    for ngay in ngaydudieukientiem:
+        print(ngay)
+    # Lấy danh sách vaccine và số ngày bảo hộ
+    vaccines = danhsachvaccine(vaccine)
+    for tenvaccine in vaccines:
+        print(tenvaccine)
+    # Lấy danh sách bò nhập trại không nằm trong nhóm loại trừ, có ngày sinh lớn hơn ngày sinh yêu cầu của liệu trình đầu tiên
+    a = time.time()
+    results = db.bonhaptrai_aggregate([
+        {"$match":{
+            "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]},
+            "PhanLoaiBo":{"$nin":["BoMangThaiLon","BoChoDe"]}
+        }},
+        {"$group":{
+            "_id":"null",
+            "danhsachsotai":{
+                "$push":"$SoTai"
+            }
+        }},
+        {"$project":{
+            "_id":0,
+            "danhsachsotai":1
+        }}
+    ])
+    danhsachsotaibonhaptrai = ""
+    for result in results:
+        if result is not None:
+            danhsachsotaibonhaptrai = ";".join(map(str,result["danhsachsotai"]))
+    b = time.time()
+    print("Thoi gian tim kiem bo: "+str(b-a))
+    # Lấy danh sách bò đã tiêm cùng với số mũi tiêm, ngày tiêm gần nhất của nhóm vaccine đó, ngày tiêm gần nhất của 1 vaccine bất kỳ
+    a = time.time()
+    danhsachboduoctiem = []
+    results = db.vaccine_aggregate([
+        {"$match":{
+            "DaHoanThanh":True,
+        }},
+        {
+            "$group": {
+                "_id": "$Bo._id",
+                "SoTai":{"$first":"$Bo.SoTai"},
+                "soluong": {"$sum": 1},
+                "thongtintiemvaccine":{"$push":{"NgayThucHien":"$NgayThucHien","VaccineId":"$DanhMucVaccine._id"}}
+            }
+        },
+        {
+            "$set":{
+                "lantiemcuoi":{
+                    "$reduce":{
+                        "input":"$thongtintiemvaccine",
+                        "initialValue":{"NgayThucHien":None},
+                        "in":{
+                            "$cond":[
+                                {"$or":[{"$gt":["$$this.NgayThucHien","$$value.NgayThucHien"]},{"$eq":["$$value.NgayThucHien",None]}]},"$$this","$$value"
+                            ]
+                        }
+                    }
+                },
+                "lantiemcuoi_vaccinenay":{
+                    "$reduce":{
+                        "input":"$thongtintiemvaccine",
+                        "initialValue":{"NgayThucHien":None},
+                        "in":{
+                            "$cond":[
+                                {"$and":[{"$or":[{"$gt":["$$this.NgayThucHien","$$value.NgayThucHien"]},{"$eq":["$$value.NgayThucHien",None]}]},{"$eq":["$$this.DanhMucVaccine.NhomVaccineModel._id",nhomvaccineID]}]},"$$this","$$value"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {"$group":{
+            "_id":"null",
+            "soluong":{"$sum":1},
+            "danhsach":{
+                "$push":
+                {"SoTai":"$SoTai",
+                "NgayTiemCuoi":"$lantiemcuoi.NgayThucHien",
+                "NgayTiemCuoi_VaccineNay":"$lantiemcuoi_vaccinenay.NgayThucHien"
+                }            }
+        }},
+        {
+            "$project": {
+                "_id":0,
+                "soluong":1,
+                "danhsach":1,
+            }
+        },
+    ])
+    for result in results:
+        if result is not None:
+            danhsachboduoctiem = set(result[danhsach])
+            print("So luong bo duoc tiem: "+str(result["soluong"]))
+    b = time.time()
+    print("Thời gian tính số lượng bò được tiêm vaccine: "+str(b-a))
+    # Lọc ra danh sách bò:
+        # Bò ngày sinh null
+            # chưa tiêm lần nào & ngày tiêm gần nhất không quá 15 ngày
+            # đã có tiêm & ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra
+        # Bò có ngày sinh:
+            # số lần tiêm ít hơn số liệu trình
+                # => ngày sinh lớn hơn ngày tuổi tối thiểu tiêm liệu trình đó & tiêm không quá 15 ngày
+            # số lần tiêm nhiều hơn số liệu trình
+                # =>  ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra & ngày tiêm gần nhất hơn 15 ngày trước
+    # Lưu danh sách bò vào db
+    reportName = "Danh sách bò đủ điều kiện tiêm vaccine "+vaccine
+    test_result = {
+        "NoiDung":reportName,
+        "CreatedAt":datetime.now(),
+        # "SoLuong":soluong,
+        # "ThongTinTiemVaccine":thongtintiemvaccine,
+        "NgayKiemTra":datetocheck,
+        "BoTrongTrai":danhsachsotaibonhaptrai
+    }
+    test_result_collection.baocaothang.update_one(
+        {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+    )
+    # print(reportName +": "+ str(soluong))

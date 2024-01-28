@@ -2577,126 +2577,127 @@ def tongSo_khongThai_sauPhoi_tuNhien_ver2(
     print("Finish in " + str(duration))
 
 # 14	Tổng số bò ghép đực được khám thai
-def tongSo_duocKhamThai_sauGhepDuc(
-    startdate,
-    enddate,
-    gioitinh=gioiTinhTatCa,
-    nhombo=tatCaNhomBo,
-):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    khungChenhLech = 90 * 24 * 60 * 60 * 1000
-    khungChenhLechPhoiXL = 3 * 24 * 60 * 60 * 1000
-    khungChenhLechBanDau = (90 * 24 * 60 * 60 * 1000) * (-1)
-    pipeline = [
-        {"$match": {"NgayKham": {"$gte": startDate, "$lt": endDate}}},
-        {
-            "$lookup": {
-                "from": "ThongTinPhoiGiong",
-                "localField": "Bo.SoTai",
-                "foreignField": "Bo.SoTai",
-                "let": {"ngayKham": "$NgayKham"},
-                "pipeline": [
-                    # {"$sort":{"Bo.SoTai":1}},
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$gt": [
-                                    {"$subtract": ["$NgayPhoi", startDate]},
-                                    khungChenhLechBanDau,
-                                ]
-                            }
-                        },
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$lt": [
-                                    {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
-                                    khungChenhLech,
-                                ]
-                            }
-                        },
-                    },
-                    {"$sort": {"NgayPhoi": -1}},
-                ],
-                "as": "phoigiong",
-            }
-        },
-        {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
-        {
-            "$match": {
-                "$or": [
-                    {"phoigiong.0.GhepDuc": True},
-                    {"phoigiong.0.GhepDucKhongQuaPhoi": True},
-                ]
-            }
-        },
-        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
-        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
-        #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
-        {
-            "$group": {
-                "_id": "null",
-                "soluong": {"$count": {}},
-                "danhsachsotai": {"$push": "$Bo.SoTai"},
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "soluong": 1,
-                "danhsachsotaijoined": {
-                    "$reduce": {
-                        "input": "$danhsachsotai",
-                        "initialValue": "",
-                        "in": {
-                            "$concat": [
-                                "$$value",
-                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
-                            ]
-                        },
-                    }
-                },
-            }
-        },
-    ]
-    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
-    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    startTime = time.time()
-    results = db.khamthai.aggregate(pipeline)
-    reportName = (
-        "#14. Tổng số bò ghép đực được khám thai"
-        # + nhombo["tennhom"]
-        # + " "
-        # + " - "
-        # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
-    )
-    print(reportName)
-    for result in results:
-        if result != None:
-            test_result = {
-                "NoiDung": reportName,
-                "SoLuong": result["soluong"],
-                "DanhSachSoTai": result["danhsachsotaijoined"],
-            }
-            test_result_collection.baocaothang.update_one(
-                {"_id": testResultId}, {"$push": {"KetQua": test_result}}
-            )
-            print(reportName + ": " + str(result["soluong"]))
-    endTime = time.time()
-    duration = endTime - startTime
-    print("Finish in " + str(duration))
+
+# def tongSo_duocKhamThai_sauGhepDuc(
+#     startdate,
+#     enddate,
+#     gioitinh=gioiTinhTatCa,
+#     nhombo=tatCaNhomBo,
+# ):
+#     startDate = datetime.strptime(startdate, date_format)
+#     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
+#     khungChenhLech = 90 * 24 * 60 * 60 * 1000
+#     khungChenhLechPhoiXL = 3 * 24 * 60 * 60 * 1000
+#     khungChenhLechBanDau = (90 * 24 * 60 * 60 * 1000) * (-1)
+#     pipeline = [
+#         {"$match": {"NgayKham": {"$gte": startDate, "$lt": endDate}}},
+#         {
+#             "$lookup": {
+#                 "from": "ThongTinPhoiGiong",
+#                 "localField": "Bo.SoTai",
+#                 "foreignField": "Bo.SoTai",
+#                 "let": {"ngayKham": "$NgayKham"},
+#                 "pipeline": [
+#                     # {"$sort":{"Bo.SoTai":1}},
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
+#                     },
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
+#                     },
+#                     {
+#                         "$match": {
+#                             "$expr": {
+#                                 "$gt": [
+#                                     {"$subtract": ["$NgayPhoi", startDate]},
+#                                     khungChenhLechBanDau,
+#                                 ]
+#                             }
+#                         },
+#                     },
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
+#                     },
+#                     {
+#                         "$match": {
+#                             "$expr": {
+#                                 "$lt": [
+#                                     {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
+#                                     khungChenhLech,
+#                                 ]
+#                             }
+#                         },
+#                     },
+#                     {"$sort": {"NgayPhoi": -1}},
+#                 ],
+#                 "as": "phoigiong",
+#             }
+#         },
+#         {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
+#         {
+#             "$match": {
+#                 "$or": [
+#                     {"phoigiong.0.GhepDuc": True},
+#                     {"phoigiong.0.GhepDucKhongQuaPhoi": True},
+#                 ]
+#             }
+#         },
+#         # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
+#         # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
+#         #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+#         {
+#             "$group": {
+#                 "_id": "null",
+#                 "soluong": {"$count": {}},
+#                 "danhsachsotai": {"$push": "$Bo.SoTai"},
+#             }
+#         },
+#         {
+#             "$project": {
+#                 "_id": 0,
+#                 "soluong": 1,
+#                 "danhsachsotaijoined": {
+#                     "$reduce": {
+#                         "input": "$danhsachsotai",
+#                         "initialValue": "",
+#                         "in": {
+#                             "$concat": [
+#                                 "$$value",
+#                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+#                                 "$$this",
+#                             ]
+#                         },
+#                     }
+#                 },
+#             }
+#         },
+#     ]
+#     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+#     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+#     startTime = time.time()
+#     results = db.khamthai.aggregate(pipeline)
+#     reportName = (
+#         "#14. Tổng số bò ghép đực được khám thai"
+#         # + nhombo["tennhom"]
+#         # + " "
+#         # + " - "
+#         # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+#     )
+#     print(reportName)
+#     for result in results:
+#         if result != None:
+#             test_result = {
+#                 "NoiDung": reportName,
+#                 "SoLuong": result["soluong"],
+#                 "DanhSachSoTai": result["danhsachsotaijoined"],
+#             }
+#             test_result_collection.baocaothang.update_one(
+#                 {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+#             )
+#             print(reportName + ": " + str(result["soluong"]))
+#     endTime = time.time()
+#     duration = endTime - startTime
+#     print("Finish in " + str(duration))
 
 
 def tongSo_duocKhamThai_sauGhepDuc_ver2(
@@ -2710,78 +2711,132 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
     if month < 3:
         month += 12
         year -= 1
-    ngayXLSSDau = startDate.replace(year=year,day=1, month=month - 2)
+    ngayghepducdau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -=1
+    ngayghepduccuoi = startDate.replace(year=year,day=1, month = month-1)
+    danhsachghepduc = []
+    danhsachghepducjoined =""
+    soluongghepduc = None
+    pipeline = [
+        {"$match": {"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}}},
+        {"$group":{
+            "_id":"$Bo.SoTai",
+            "lanphoi":{
+                "$push":{
+                    "NgayPhoi":"$NgayPhoi",
+                    "NgayGhepDuc":"$NgayGhepDuc",
+                    "GhepDucKhongQuaPhoi":"$GhepDucKhongQuaPhoi",
+                    "GhepDuc":"$GhepDuc"
+                }
+            },
+            "SoTai":{"$first":"$Bo.SoTai"}
+        }},
+        {"$match":{
+            "lanphoi":{
+                "$elemMatch":{
+                    "NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi},
+                    "GhepDucKhongQuaPhoi":True
+                }
+            }
+        }},
+        {"$set":{
+            "lanphoicuoi_thangdau":{
+                "$reduce":{
+                    "input":"$lanphoi",
+                    "initialValue":{"NgayPhoi":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$eq":["$$value.NgayPhoi",None]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]}]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "lanphoidau_thangsau":{
+                "$reduce":{
+                    "input":"$lanphoi",
+                    "initialValue":{"NgayPhoi":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            }
 
-    danhsachbophoilancuoixlss = []
-    danhsachbophoilancuoixlss =""
+        }},
+        {"$match":
+            {"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True}
+        },
+        {"$group":{
+            "_id":"null",
+            "danhsach":{
+                "$push":{
+                    "SoTai":"$SoTai",
+                    "NgayPhoiDauThangSau":"$lanphoidau_thangsau.NgayPhoi"
+                    }
+            }
+        }},
+        {"$project":{
+            "_id":0,
+            "danhsach":1,
+            "danhsachsotaijoined":{
+                "$reduce":{
+                    "input":"$danhsach",
+                    "initialValue":"",
+                    "in":{
+                        "$concat":[ "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this.SoTai",]
+                    }
+                }
+            }
+        }}
+
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = db.phoigiong_aggregate(pipeline)
+    reportName = (
+        "#14. Tổng số bò ghép đực được khám thai"
+    )
+
+    print(reportName)
+    for result in results:
+        if result != None:
+            danhsachghepduc = result["danhsach"]
+            danhsachghepducjoined = result["danhsachsotaijoined"]
+            soluongghepduc = len(danhsachghepduc)
 
     pipeline = [
-        {"$match": {"NgayKham": {"$gte": startDate, "$lt": endDate}}},
-        {
-            "$lookup": {
-                "from": "ThongTinPhoiGiong",
-                "localField": "Bo.SoTai",
-                "foreignField": "Bo.SoTai",
-                "let": {"ngayKham": "$NgayKham"},
-                "pipeline": [
-                    # {"$sort":{"Bo.SoTai":1}},
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$gt": [
-                                    {"$subtract": ["$NgayPhoi", startDate]},
-                                    khungChenhLechBanDau,
-                                ]
-                            }
-                        },
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$lt": [
-                                    {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
-                                    khungChenhLech,
-                                ]
-                            }
-                        },
-                    },
-                    {"$sort": {"NgayPhoi": -1}},
-                ],
-                "as": "phoigiong",
-            }
-        },
-        {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
-        {
-            "$match": {
-                "$or": [
-                    {"phoigiong.0.GhepDuc": True},
-                    {"phoigiong.0.GhepDucKhongQuaPhoi": True},
-                ]
-            }
-        },
-        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
-        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
-        #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+        {"$match": {"NgayKham": {"$gte": ngayghepduccuoi, "$lt": endDate},"DaKham":True}},
         {
             "$group": {
                 "_id": "null",
-                "soluong": {"$count": {}},
-                "danhsachsotai": {"$push": "$Bo.SoTai"},
+                "soluong": {"$sum": 1},
+                "danhsach": {"$push": {
+                    "SoTai":"$Bo.SoTai",
+                    "NgayKham":"$NgayKham"}
+                    },
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "soluong": 1,
+                "danhsach":1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -2790,7 +2845,7 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
                             "$concat": [
                                 "$$value",
                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
+                                "$$this.NgayKham",
                             ]
                         },
                     }
@@ -2798,115 +2853,332 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
             }
         },
     ]
-    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
-    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    startTime = time.time()
-    results = db.khamthai.aggregate(pipeline)
-    reportName = (
-        "#14. Tổng số bò ghép đực được khám thai"
-        # + nhombo["tennhom"]
-        # + " "
-        # + " - "
-        # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
-    )
-    print(reportName)
-    for result in results:
-        if result != None:
-            test_result = {
-                "NoiDung": reportName,
-                "SoLuong": result["soluong"],
-                "DanhSachSoTai": result["danhsachsotaijoined"],
-            }
-            test_result_collection.baocaothang.update_one(
-                {"_id": testResultId}, {"$push": {"KetQua": test_result}}
-            )
-            print(reportName + ": " + str(result["soluong"]))
-    endTime = time.time()
-    duration = endTime - startTime
-    print("Finish in " + str(duration))
+    danhsachkhamthai = []
+    danhsachghepducduockhamthai = []
+    danhsachghepducduockhamthaijoined = ""
+    if soluongghepduc == None:
+        print("Không có bò được ghép đực")
+    else:
+        startTime2 = time.time()
+        results = db.khamthai_aggregate(pipeline)
+        for result in results:
+            if result != None:
+                danhsachkhamthai = result["danhsach"]
+        dict_phoi = {item["SoTai"]: item.get("NgayPhoiDauThangSau") for item in danhsachghepduc}
+        for item in danhsachkhamthai:
+            soTai = item["SoTai"]
+            ngayKham = item["NgayKham"]
+            if soTai in dict_phoi and (dict_phoi[soTai] is None or ngayKham <= dict_phoi[soTai]):
+                danhsachghepducduockhamthai.append(soTai)
+        danhsachghepducduockhamthaijoined = ";".join(map(str,danhsachghepducduockhamthai))
+        test_result = {
+            "NoiDung": reportName,
+            "DanhSachGhepDuc": danhsachghepducjoined,
+            "DanhSachGhepDucKhamThai":danhsachghepducduockhamthaijoined,
+            "SoLuong":len(danhsachghepducduockhamthai)
+        }
+        test_result_collection.baocaothang.update_one(
+            {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+        )
+        endTime2 = time.time()
+        duration = endTime2 - startTime2
+        print("Finish in " + str(duration))
 
 
 
 # 15	Tổng số bò ghép đực có thai
-def tongSo_coThai_sauGhepDuc(
+
+# def tongSo_coThai_sauGhepDuc(
+#     startdate,
+#     enddate,
+#     gioitinh=gioiTinhTatCa,
+#     nhombo=tatCaNhomBo,
+# ):
+#     startDate = datetime.strptime(startdate, date_format)
+#     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
+#     khungChenhLech = 90 * 24 * 60 * 60 * 1000
+#     khungChenhLechPhoiXL = 3 * 24 * 60 * 60 * 1000
+#     khungChenhLechBanDau = (90 * 24 * 60 * 60 * 1000) * (-1)
+#     pipeline = [
+#         {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
+#         {"$match": {"CoThai": True}},
+#         {
+#             "$lookup": {
+#                 "from": "ThongTinPhoiGiong",
+#                 "localField": "Bo.SoTai",
+#                 "foreignField": "Bo.SoTai",
+#                 "let": {"ngayKham": "$NgayKham"},
+#                 "pipeline": [
+#                     # {"$sort":{"Bo.SoTai":1}},
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
+#                     },
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
+#                     },
+#                     {
+#                         "$match": {
+#                             "$expr": {
+#                                 "$gt": [
+#                                     {"$subtract": ["$NgayPhoi", startDate]},
+#                                     khungChenhLechBanDau,
+#                                 ]
+#                             }
+#                         },
+#                     },
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
+#                     },
+#                     {
+#                         "$match": {
+#                             "$expr": {
+#                                 "$lt": [
+#                                     {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
+#                                     khungChenhLech,
+#                                 ]
+#                             }
+#                         },
+#                     },
+#                     {"$sort": {"NgayPhoi": -1}},
+#                 ],
+#                 "as": "phoigiong",
+#             }
+#         },
+#         {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
+#         {
+#             "$match": {
+#                 "$or": [
+#                     {"phoigiong.0.GhepDuc": True},
+#                     {"phoigiong.0.GhepDucKhongQuaPhoi": True},
+#                 ]
+#             }
+#         },
+#         # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
+#         # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
+#         #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+#         {
+#             "$group": {
+#                 "_id": "null",
+#                 "soluong": {"$count": {}},
+#                 "danhsachsotai": {"$push": "$Bo.SoTai"},
+#             }
+#         },
+#         {
+#             "$project": {
+#                 "_id": 0,
+#                 "soluong": 1,
+#                 "danhsachsotaijoined": {
+#                     "$reduce": {
+#                         "input": "$danhsachsotai",
+#                         "initialValue": "",
+#                         "in": {
+#                             "$concat": [
+#                                 "$$value",
+#                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+#                                 "$$this",
+#                             ]
+#                         },
+#                     }
+#                 },
+#             }
+#         },
+#     ]
+#     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+#     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+#     startTime = time.time()
+#     results = db.khamthai.aggregate(pipeline)
+#     reportName = (
+#         "#15. Tổng số bò ghép đực có thai"
+#         # + nhombo["tennhom"]
+#         # + " "
+#         # + " - "
+#         # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+#     )
+#     print(reportName)
+#     for result in results:
+#         if result != None:
+#             test_result = {
+#                 "NoiDung": reportName,
+#                 "SoLuong": result["soluong"],
+#                 "DanhSachSoTai": result["danhsachsotaijoined"],
+#             }
+#             test_result_collection.baocaothang.update_one(
+#                 {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+#             )
+#             print(reportName + ": " + str(result["soluong"]))
+#     endTime = time.time()
+#     duration = endTime - startTime
+#     print("Finish in " + str(duration))
+
+
+def tongSo_coThai_sauGhepDuc_ver2(
     startdate,
     enddate,
-    gioitinh=gioiTinhTatCa,
-    nhombo=tatCaNhomBo,
 ):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    khungChenhLech = 90 * 24 * 60 * 60 * 1000
-    khungChenhLechPhoiXL = 3 * 24 * 60 * 60 * 1000
-    khungChenhLechBanDau = (90 * 24 * 60 * 60 * 1000) * (-1)
+    month = startDate.month
+    year = startDate.year
+    if month < 3:
+        month += 12
+        year -= 1
+    ngayghepducdau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -=1
+    ngayghepduccuoi = startDate.replace(year=year,day=1, month = month-1)
+    danhsachghepduc = []
+    danhsachghepducjoined =""
+    soluongghepduc = None
     pipeline = [
-        {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
-        {"$match": {"CoThai": True}},
-        {
-            "$lookup": {
-                "from": "ThongTinPhoiGiong",
-                "localField": "Bo.SoTai",
-                "foreignField": "Bo.SoTai",
-                "let": {"ngayKham": "$NgayKham"},
-                "pipeline": [
-                    # {"$sort":{"Bo.SoTai":1}},
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$gt": [
-                                    {"$subtract": ["$NgayPhoi", startDate]},
-                                    khungChenhLechBanDau,
-                                ]
-                            }
-                        },
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$lt": [
-                                    {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
-                                    khungChenhLech,
-                                ]
-                            }
-                        },
-                    },
-                    {"$sort": {"NgayPhoi": -1}},
-                ],
-                "as": "phoigiong",
+        {"$match": {"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}}},
+        {"$group":{
+            "_id":"$Bo.SoTai",
+            "lanphoi":{
+                "$push":{
+                    "NgayPhoi":"$NgayPhoi",
+                    "NgayGhepDuc":"$NgayGhepDuc",
+                    "GhepDucKhongQuaPhoi":"$GhepDucKhongQuaPhoi",
+                    "GhepDuc":"$GhepDuc"
+                }
+            },
+            "SoTai":{"$first":"$Bo.SoTai"}
+        }},
+        {"$match":{
+            "lanphoi":{
+                "$elemMatch":{
+                    "NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi},
+                    "GhepDucKhongQuaPhoi":True
+                }
             }
-        },
-        {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
-        {
-            "$match": {
-                "$or": [
-                    {"phoigiong.0.GhepDuc": True},
-                    {"phoigiong.0.GhepDucKhongQuaPhoi": True},
-                ]
+        }},
+        {"$set":{
+            "lanphoicuoi_thangdau":{
+                "$reduce":{
+                    "input":"$lanphoi",
+                    "initialValue":{"NgayPhoi":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$eq":["$$value.NgayPhoi",None]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]}]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "lanphoidau_thangsau":{
+                "$reduce":{
+                    "input":"$lanphoi",
+                    "initialValue":{"NgayPhoi":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
             }
+
+        }},
+        {"$match":
+            {"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True}
         },
-        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
-        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
-        #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+        {"$group":{
+            "_id":"null",
+            "danhsach":{
+                "$push":{
+                    "SoTai":"$SoTai",
+                    "NgayPhoiDauThangSau":"$lanphoidau_thangsau.NgayPhoi"
+                    }
+            }
+        }},
+        {"$project":{
+            "_id":0,
+            "danhsach":1,
+            "danhsachsotaijoined":{
+                "$reduce":{
+                    "input":"$danhsach",
+                    "initialValue":"",
+                    "in":{
+                        "$concat":[ "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this.SoTai",]
+                    }
+                }
+            }
+        }}
+
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = db.phoigiong_aggregate(pipeline)
+    reportName = (
+        "#15. Tổng số bò ghép đực có thai"
+    )
+
+    print(reportName)
+    for result in results:
+        if result != None:
+            danhsachghepduc = result["danhsach"]
+            danhsachghepducjoined = result["danhsachsotaijoined"]
+            soluongghepduc = len(danhsachghepduc)
+
+    pipeline = [
+        {"$match": {"NgayKham": {"$gte": ngayghepduccuoi, "$lt": endDate}}},
+        {"$group":{
+            "_id":"$Bo.SoTai",
+            "SoTai":{"$first":"$Bo.SoTai"},
+            "danhsachkham":{
+                "$push":{
+                    "NgayKham":"$NgayKham",
+                    "CoThai":"$CoThai"
+                }
+            }
+        }},
+        {"$set":{
+            "lankhamcuoi":{
+                "$reduce":{
+                    "input":"$danhsachkham",
+                    "initialValue":{"NgayKham":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$eq":["$svalue.NgayKham",None]},
+                                {"$gt":["$$this.NgayKham","$$value.NgayKham"]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            }
+        }},
+        {"$match":{
+            "lankhamcuoi.CoThai":True
+        }},
         {
             "$group": {
                 "_id": "null",
-                "soluong": {"$count": {}},
-                "danhsachsotai": {"$push": "$Bo.SoTai"},
+                "soluong": {"$sum": 1},
+                "danhsach": {"$push": {
+                    "SoTai":"$SoTai",
+                    "NgayKham":"$lankhamcuoi.NgayKham"}
+                    },
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "soluong": 1,
+                "danhsach":1,
                 "danhsachsotaijoined": {
                     "$reduce": {
                         "input": "$danhsachsotai",
@@ -2915,7 +3187,7 @@ def tongSo_coThai_sauGhepDuc(
                             "$concat": [
                                 "$$value",
                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
+                                "$$this.NgayKham",
                             ]
                         },
                     }
@@ -2923,126 +3195,344 @@ def tongSo_coThai_sauGhepDuc(
             }
         },
     ]
-    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
-    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    startTime = time.time()
-    results = db.khamthai.aggregate(pipeline)
-    reportName = (
-        "#15. Tổng số bò ghép đực có thai"
-        # + nhombo["tennhom"]
-        # + " "
-        # + " - "
-        # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
-    )
-    print(reportName)
-    for result in results:
-        if result != None:
-            test_result = {
-                "NoiDung": reportName,
-                "SoLuong": result["soluong"],
-                "DanhSachSoTai": result["danhsachsotaijoined"],
-            }
-            test_result_collection.baocaothang.update_one(
-                {"_id": testResultId}, {"$push": {"KetQua": test_result}}
-            )
-            print(reportName + ": " + str(result["soluong"]))
-    endTime = time.time()
-    duration = endTime - startTime
-    print("Finish in " + str(duration))
-
+    danhsachkhamthai = []
+    danhsachghepducduockhamthai = []
+    danhsachghepducduockhamthaijoined = ""
+    if soluongghepduc == None:
+        print("Không có bò được ghép đực")
+    else:
+        startTime2 = time.time()
+        results = db.khamthai_aggregate(pipeline)
+        for result in results:
+            if result != None:
+                danhsachkhamthai = result["danhsach"]
+        dict_phoi = {item["SoTai"]: item.get("NgayPhoiDauThangSau") for item in danhsachghepduc}
+        for item in danhsachkhamthai:
+            soTai = item["SoTai"]
+            ngayKham = item["NgayKham"]
+            if soTai in dict_phoi and dict_phoi[soTai] is None:
+                danhsachghepducduockhamthai.append(soTai)
+        danhsachghepducduockhamthaijoined = ";".join(map(str,danhsachghepducduockhamthai))
+        test_result = {
+            "NoiDung": reportName,
+            "DanhSachGhepDuc": danhsachghepducjoined,
+            "DanhSachGhepDucCoThai":danhsachghepducduockhamthaijoined,
+            "SoLuong":len(danhsachghepducduockhamthai)
+        }
+        test_result_collection.baocaothang.update_one(
+            {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+        )
+        endTime2 = time.time()
+        duration = endTime2 - startTime2
+        print("Finish in " + str(duration))
 
 
 
 
 # 16	Tổng số bò ghép đực không có thai
-def tongSo_khongThai_sauGhepDuc(
+
+# def tongSo_khongThai_sauGhepDuc(
+#     startdate,
+#     enddate,
+#     gioitinh=gioiTinhTatCa,
+#     nhombo=tatCaNhomBo,
+# ):
+#     startDate = datetime.strptime(startdate, date_format)
+#     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
+#     khungChenhLech = 90 * 24 * 60 * 60 * 1000
+#     khungChenhLechPhoiXL = 3 * 24 * 60 * 60 * 1000
+#     khungChenhLechBanDau = (90 * 24 * 60 * 60 * 1000) * (-1)
+#     pipeline = [
+#         {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
+#         {"$match": {"CoThai": False}},
+#         {
+#             "$lookup": {
+#                 "from": "ThongTinPhoiGiong",
+#                 "localField": "Bo.SoTai",
+#                 "foreignField": "Bo.SoTai",
+#                 "let": {"ngayKham": "$NgayKham"},
+#                 "pipeline": [
+#                     # {"$sort":{"Bo.SoTai":1}},
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
+#                     },
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
+#                     },
+#                     {
+#                         "$match": {
+#                             "$expr": {
+#                                 "$gt": [
+#                                     {"$subtract": ["$NgayPhoi", startDate]},
+#                                     khungChenhLechBanDau,
+#                                 ]
+#                             }
+#                         },
+#                     },
+#                     {
+#                         "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
+#                     },
+#                     {
+#                         "$match": {
+#                             "$expr": {
+#                                 "$lt": [
+#                                     {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
+#                                     khungChenhLech,
+#                                 ]
+#                             }
+#                         },
+#                     },
+#                     {"$sort": {"NgayPhoi": -1}},
+#                 ],
+#                 "as": "phoigiong",
+#             }
+#         },
+#         {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
+#         {
+#             "$match": {
+#                 "$or": [
+#                     {"phoigiong.0.GhepDuc": True},
+#                     {"phoigiong.0.GhepDucKhongQuaPhoi": True},
+#                 ]
+#             }
+#         },
+#         # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
+#         # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
+#         #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+#         {
+#             "$group": {
+#                 "_id": "null",
+#                 "soluong": {"$count": {}},
+#                 "danhsachsotai": {"$push": "$Bo.SoTai"},
+#             }
+#         },
+#         {
+#             "$project": {
+#                 "_id": 0,
+#                 "soluong": 1,
+#                 "danhsachsotaijoined": {
+#                     "$reduce": {
+#                         "input": "$danhsachsotai",
+#                         "initialValue": "",
+#                         "in": {
+#                             "$concat": [
+#                                 "$$value",
+#                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+#                                 "$$this",
+#                             ]
+#                         },
+#                     }
+#                 },
+#             }
+#         },
+#     ]
+#     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+#     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+#     startTime = time.time()
+#     results = db.khamthai.aggregate(pipeline)
+#     reportName = (
+#         "#16. Tổng số bò ghép đực không có thai"
+#         # + nhombo["tennhom"]
+#         # + " "
+#         # + " - "
+#         # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+#     )
+#     print(reportName)
+#     for result in results:
+#         if result != None:
+#             test_result = {
+#                 "NoiDung": reportName,
+#                 "SoLuong": result["soluong"],
+#                 "DanhSachSoTai": result["danhsachsotaijoined"],
+#             }
+#             test_result_collection.baocaothang.update_one(
+#                 {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+#             )
+#             print(reportName + ": " + str(result["soluong"]))
+#     endTime = time.time()
+#     duration = endTime - startTime
+#     print("Finish in " + str(duration))
+
+
+def tongSo_khongThai_sauGhepDuc_ver2(
     startdate,
     enddate,
-    gioitinh=gioiTinhTatCa,
-    nhombo=tatCaNhomBo,
 ):
     startDate = datetime.strptime(startdate, date_format)
     endDate = datetime.strptime(enddate, date_format) + timedelta(days=1)
-    khungChenhLech = 90 * 24 * 60 * 60 * 1000
-    khungChenhLechPhoiXL = 3 * 24 * 60 * 60 * 1000
-    khungChenhLechBanDau = (90 * 24 * 60 * 60 * 1000) * (-1)
+    month = startDate.month
+    year = startDate.year
+    if month < 3:
+        month += 12
+        year -= 1
+    ngayghepducdau = startDate.replace(year=year,day=1, month=month - 2)
+    if month < 2:
+        month += 12
+        year -=1
+    ngayghepduccuoi = startDate.replace(year=year,day=1, month = month-1)
+    print("Ngay ghep duc cuoi"+str(ngayghepduccuoi))
+    print("Enddat: "+str(endDate))
+    danhsachghepduc = []
+    danhsachghepducjoined =""
+    soluongghepduc = None
     pipeline = [
-        {"$match": {"NgayKham": {"$gte": startDate, "$lte": endDate}}},
-        {"$match": {"CoThai": False}},
-        {
-            "$lookup": {
-                "from": "ThongTinPhoiGiong",
-                "localField": "Bo.SoTai",
-                "foreignField": "Bo.SoTai",
-                "let": {"ngayKham": "$NgayKham"},
-                "pipeline": [
-                    # {"$sort":{"Bo.SoTai":1}},
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayPhoi", endDate]}},
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", endDate]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$gt": [
-                                    {"$subtract": ["$NgayPhoi", startDate]},
-                                    khungChenhLechBanDau,
-                                ]
-                            }
-                        },
-                    },
-                    {
-                        "$match": {"$expr": {"$lt": ["$NgayGhepDuc", "$$ngayKham"]}},
-                    },
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$lt": [
-                                    {"$subtract": ["$$ngayKham", "$NgayPhoi"]},
-                                    khungChenhLech,
-                                ]
-                            }
-                        },
-                    },
-                    {"$sort": {"NgayPhoi": -1}},
-                ],
-                "as": "phoigiong",
+        {"$match": {"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}}},
+        {"$group":{
+            "_id":"$Bo.SoTai",
+            "lanphoi":{
+                "$push":{
+                    "NgayPhoi":"$NgayPhoi",
+                    "NgayGhepDuc":"$NgayGhepDuc",
+                    "GhepDucKhongQuaPhoi":"$GhepDucKhongQuaPhoi",
+                    "GhepDuc":"$GhepDuc"
+                }
+            },
+            "SoTai":{"$first":"$Bo.SoTai"}
+        }},
+        {"$match":{
+            "lanphoi":{
+                "$elemMatch":{
+                    "NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi},
+                    "GhepDucKhongQuaPhoi":True
+                }
             }
-        },
-        {"$match": {"$expr": {"$ne": [{"$size": "$phoigiong"}, 0]}}},
-        {
-            "$match": {
-                "$or": [
-                    {"phoigiong.0.GhepDuc": True},
-                    {"phoigiong.0.GhepDucKhongQuaPhoi": True},
-                ]
+        }},
+        {"$set":{
+            "lanphoicuoi_thangdau":{
+                "$reduce":{
+                    "input":"$lanphoi",
+                    "initialValue":{"NgayPhoi":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$eq":["$$value.NgayPhoi",None]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]}]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            },
+            "lanphoidau_thangsau":{
+                "$reduce":{
+                    "input":"$lanphoi",
+                    "initialValue":{"NgayPhoi":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
             }
+
+        }},
+        {"$match":
+            {"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True}
         },
-        # {"$addFields":{"ngayxlgannhat":{"$cond":{"if":{"$gt": [{ "$size": "$phoigiongxuly" }, 0]},"then":{"$arrayElemAt": [{"$arrayElemAt": ["$phoigiongxuly.LieuTrinhApDungs.NgayThucHien", 0]},0]},"else":None}}}},
-        # {"$addFields":{"chenhlech":{"$cond":{"if":{"$ne": ["$ngayxlgannhat", None]},"then":{"$subtract":["$NgayPhoi","$ngayxlgannhat"]},"else":None}}}},
-        #    {"$match":  {"$or":[{"chenhlech":None},{"chenhlech":{"$gt":khungChenhLech}}]}},
+        {"$group":{
+            "_id":"null",
+            "danhsach":{
+                "$push":{
+                    "SoTai":"$SoTai",
+                    "NgayPhoiDauThangSau":"$lanphoidau_thangsau.NgayPhoi"
+                    }
+            }
+        }},
+        {"$project":{
+            "_id":0,
+            "danhsach":1,
+            "danhsachsotaijoined":{
+                "$reduce":{
+                    "input":"$danhsach",
+                    "initialValue":"",
+                    "in":{
+                        "$concat":[ "$$value",
+                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+                                "$$this.SoTai",]
+                    }
+                }
+            }
+        }}
+
+    ]
+    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+    startTime = time.time()
+    results = db.phoigiong_aggregate(pipeline)
+    reportName = (
+        "#16. Tổng số bò ghép đực không thai"
+    )
+
+    print(reportName)
+    for result in results:
+        if result != None:
+            danhsachghepduc = result["danhsach"]
+            danhsachghepducjoined = result["danhsachsotaijoined"]
+            soluongghepduc = len(danhsachghepduc)
+
+    pipeline = [
+        {"$match": {"NgayKham": {"$gte": ngayghepduccuoi, "$lt": endDate},"DaKham":True}},
+        {"$group":{
+            "_id":"$Bo.SoTai",
+            "SoTai":{"$first":"$Bo.SoTai"},
+            "danhsachkham":{
+                "$push":{
+                    "NgayKham":"$NgayKham",
+                    "CoThai":"$CoThai"
+                }
+            }
+        }},
+        {"$set":{
+            "lankhamcuoi":{
+                "$reduce":{
+                    "input":"$danhsachkham",
+                    "initialValue":{"NgayKham":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$eq":["$svalue.NgayKham",None]},
+                                {"$gt":["$$this.NgayKham","$$value.NgayKham"]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            }
+        }},
+        {"$match":{
+            "lankhamcuoi.CoThai":False
+        }},
         {
             "$group": {
                 "_id": "null",
-                "soluong": {"$count": {}},
-                "danhsachsotai": {"$push": "$Bo.SoTai"},
+                "soluong": {"$sum": 1},
+                "danhsach": {"$push": {
+                    "SoTai":"$SoTai",
+                    "NgayKham":"$lankhamcuoi.NgayKham"}
+                    },
             }
         },
         {
             "$project": {
                 "_id": 0,
                 "soluong": 1,
+                "danhsach":1,
                 "danhsachsotaijoined": {
                     "$reduce": {
-                        "input": "$danhsachsotai",
+                        "input": "$danhsach",
                         "initialValue": "",
                         "in": {
                             "$concat": [
                                 "$$value",
                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
+                                "$$this.SoTai",
                             ]
                         },
                     }
@@ -3050,32 +3540,42 @@ def tongSo_khongThai_sauGhepDuc(
             }
         },
     ]
-    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
-    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    startTime = time.time()
-    results = db.khamthai.aggregate(pipeline)
-    reportName = (
-        "#16. Tổng số bò ghép đực không có thai"
-        # + nhombo["tennhom"]
-        # + " "
-        # + " - "
-        # + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
-    )
-    print(reportName)
-    for result in results:
-        if result != None:
-            test_result = {
-                "NoiDung": reportName,
-                "SoLuong": result["soluong"],
-                "DanhSachSoTai": result["danhsachsotaijoined"],
-            }
-            test_result_collection.baocaothang.update_one(
-                {"_id": testResultId}, {"$push": {"KetQua": test_result}}
-            )
-            print(reportName + ": " + str(result["soluong"]))
-    endTime = time.time()
-    duration = endTime - startTime
-    print("Finish in " + str(duration))
+    danhsachkhamthai = []
+    danhsachghepducduockhamthai = []
+    danhsachkhamkhongthai = ""
+    danhsachghepducduockhamthaijoined = ""
+    if soluongghepduc == None:
+        print("Không có bò được ghép đực")
+    else:
+        startTime2 = time.time()
+        results = db.khamthai_aggregate(pipeline)
+        for result in results:
+            if result != None:
+                danhsachkhamthai = result["danhsach"]
+                danhsachkhamkhongthai = result["danhsachsotaijoined"]
+                print(str(len(danhsachkhamthai)))
+        # dict_phoi = {item["SoTai"]: item.get("NgayPhoi") for item in danhsachghepduc}
+        dict_khamthai = {item["SoTai"]: item.get("NgayKham") for item in danhsachkhamthai}
+        for item in danhsachghepduc:
+            soTai = item["SoTai"]
+            ngayphoithem = item["NgayPhoiDauThangSau"]
+            if soTai in dict_khamthai or ngayphoithem is not None:
+                danhsachghepducduockhamthai.append(soTai)
+        danhsachghepducduockhamthaijoined = ";".join(map(str,danhsachghepducduockhamthai))
+        test_result = {
+            "NoiDung": reportName,
+            "DanhSachGhepDuc": danhsachghepducjoined,
+            "DanhSachGhepDucKhongThai":danhsachghepducduockhamthaijoined,
+            "SoLuong":len(danhsachghepducduockhamthai),
+            "DSKT":danhsachkhamkhongthai
+        }
+        test_result_collection.baocaothang.update_one(
+            {"_id": testResultId}, {"$push": {"KetQua": test_result}}
+        )
+        endTime2 = time.time()
+        duration = endTime2 - startTime2
+        print("Finish in " + str(duration))
+
 
 
 # Tỷ lệ đậu thai

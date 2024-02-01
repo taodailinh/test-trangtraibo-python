@@ -15,7 +15,7 @@ password = "admintest"
 
 startDate = "2024-01-01"
 endDate = "2024-01-31"
-today = "2024-01-27"
+today = "2024-01-31"
 
 # Connect to mongodb
 client = MongoClient(constants.CONNECTION_STRING)
@@ -135,8 +135,7 @@ phoiGiong.tongSo_khongThai_sauXLSS_ver2(startDate,endDate)
 phoiGiong.tongSo_coThai_sauPhoi_tuNhien_ver2(startDate,endDate)
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
-phoiGiong.tongSo_khongThai_sauPhoi_tuNhien_ver2(startDate,endDate)
-"""
+phoiGiong.tongSo_khongThai_sauPhoi_tuNhien_ver3(startDate,endDate)
 
 # 14	Tổng số bò ghép đực được khám thai
 # phoiGiong.tongSo_duocKhamThai_sauGhepDuc(startDate,endDate)
@@ -148,7 +147,6 @@ phoiGiong.tongSo_coThai_sauGhepDuc_ver2(startDate,endDate)
 # 16	Tổng số bò ghép đực không có thai
 # phoiGiong.tongSo_khongThai_sauGhepDuc(startDate,endDate)
 phoiGiong.tongSo_khongThai_sauGhepDuc_ver2(startDate,endDate)
-"""
 # 17	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 1
 phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi1)
 
@@ -165,6 +163,7 @@ phoiGiong.tyLe_dauThai_trungBinh(startDate,endDate)
 
 
 
+"""
 for bo in giongBo:
     print("Giống bò " + bo + " :")
     # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò lần 1
@@ -185,6 +184,7 @@ for bo in giongBo:
     )
 
     phoiGiong.khoangCachGiua2LuaDe(bo)
+"""
 
 """
 

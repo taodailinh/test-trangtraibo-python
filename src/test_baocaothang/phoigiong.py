@@ -2138,7 +2138,7 @@ def tongSo_coThai_sauPhoi_tuNhien_ver2(
     danhsachbophoilancuoixlss = []
     danhsachbophoilancuoixlss =""
     pipeline = [
-        {"$match": {"NgayPhoi": {"$gte": ngayXLSSDau, "$lt": startDate}}},
+        {"$match": {"NgayPhoi": {"$gte": ngayXLSSDau, "$lt": startDate},"DaThucHien":True}},
         {
             "$group": {
                 "_id": "$Bo._id",
@@ -2147,7 +2147,9 @@ def tongSo_coThai_sauPhoi_tuNhien_ver2(
                 "lanphoi": {"$push": {
                     "NgayPhoi":"$NgayPhoi",
                     "CoXuLySinhSan":"$CoXuLySinhSan",
-                    "GhepDucKhongQuaPhoi":"$GhepDucKhongQuaPhoi"
+                    "GhepDucKhongQuaPhoi":"$GhepDucKhongQuaPhoi",
+                    "GhepDuc":"$GhepDuc",
+                    "NgayGhepDuc":"$NgayGhepDuc"
                 }},
             }
         },
@@ -2159,7 +2161,14 @@ def tongSo_coThai_sauPhoi_tuNhien_ver2(
                         "initialValue":{"NgayPhoi":None},
                         "in":{
                             "$cond":[
-                                {"$or":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$value.NgayPhoi",None]}]},"$$this","$$value"
+                                {"$or":[
+                                    {"$eq":["$$value.NgayPhoi",None]},
+                                    {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                    {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                    ]
+                                },
+                                "$$this",
+                                "$$value"
                             ]
                         }
                     }
@@ -2594,20 +2603,19 @@ def tongSo_khongThai_sauPhoi_tuNhien_ver3(
         month += 12
         year -=1
     ngayphoicuoi = startDate.replace(year=year,day=1, month = month-1)
-    print("Ngay ghep duc cuoi"+str(ngayphoicuoi))
     print("Enddat: "+str(endDate))
     danhsachphoi = []
     danhsachghepducjoined =""
     soluongphoi = None
     pipeline = [
-        {"$match": {"NgayPhoi": {"$gte": ngayphoidau, "$lt": startDate}}},
+        {"$match": {"NgayPhoi": {"$gte": ngayphoidau, "$lt": endDate},"DaThucHien":True}},
         {"$group":{
             "_id":"$Bo.SoTai",
             "lanphoi":{
                 "$push":{
                     "NgayPhoi":"$NgayPhoi",
                     "NgayGhepDuc":"$NgayGhepDuc",
-                    "CoXuLySinhSan":"$CoXuLySinhSan"
+                    "CoXuLySinhSan":"$CoXuLySinhSan",
                     "GhepDucKhongQuaPhoi":"$GhepDucKhongQuaPhoi",
                     "GhepDuc":"$GhepDuc"
                 }
@@ -2631,8 +2639,8 @@ def tongSo_khongThai_sauPhoi_tuNhien_ver3(
                     "in":{
                         "$cond":[
                             {"$or":[
-                                {"$eq":["$$value.NgayPhoi",None]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayphoicuoi]}]}
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.CoXuLySinhSan",False]},{"$lt":["$$this.NgayPhoi",ngayphoicuoi]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayphoicuoi]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.CoXuLySinhSan",False]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -2647,8 +2655,8 @@ def tongSo_khongThai_sauPhoi_tuNhien_ver3(
                     "in":{
                         "$cond":[
                             {"$or":[
-                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayphoicuoi]}]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayphoicuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayphoicuoi]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.CoXuLySinhSan",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayphoicuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.CoXuLySinhSan",False]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -2692,7 +2700,7 @@ def tongSo_khongThai_sauPhoi_tuNhien_ver3(
     startTime = time.time()
     results = db.phoigiong_aggregate(pipeline)
     reportName = (
-        "#12. Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai"
+        "#13. Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai"
     )
 
     print(reportName)
@@ -2771,7 +2779,7 @@ def tongSo_khongThai_sauPhoi_tuNhien_ver3(
     danhsachkhamkhongthai = ""
     danhsachghepducduockhamthaijoined = ""
     if soluongphoi == None:
-        print("Không có bò được ghép đực")
+        print("Không có bò được phối")
     else:
         startTime2 = time.time()
         results = db.khamthai_aggregate(pipeline)
@@ -2946,7 +2954,7 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
     danhsachghepducjoined =""
     soluongghepduc = None
     pipeline = [
-        {"$match": {"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}}},
+        {"$match": {"$or":[{"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}},{"NgayGhepDuc": {"$gte": ngayghepducdau, "$lt": startDate}}]}},
         {"$group":{
             "_id":"$Bo.SoTai",
             "lanphoi":{
@@ -2962,8 +2970,8 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
         {"$match":{
             "lanphoi":{
                 "$elemMatch":{
-                    "NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi},
-                    "GhepDucKhongQuaPhoi":True
+                    "$or":[{"NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi}},{"NgayGhepDuc":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi}}],
+                    "$or":[{"GhepDucKhongQuaPhoi":True},{"GhepDuc":True}]
                 }
             }
         }},
@@ -2976,7 +2984,9 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
                         "$cond":[
                             {"$or":[
                                 {"$eq":["$$value.NgayPhoi",None]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]}]}
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayGhepDuc","$$value.NgayPhoi"]},{"$lt":["$$this.NgayGhepDuc",ngayghepduccuoi]},{"$or":[{"$eq":["$$this.GhepDuc",True]},{"$eq":["$$this.GhepDucKhongQuaPhoi",True]}]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayGhepDuc"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$or":[{"$eq":["$$value.GhepDuc",True]},{"$eq":["$$value.GhepDucKhongQuaPhoi",True]}]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -2991,8 +3001,11 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
                     "in":{
                         "$cond":[
                             {"$or":[
-                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]}]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gte":["$$this.NgayGhepDuc",ngayghepduccuoi]}]},
+                                {"$and":[{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gte":["$$this.NgayGhepDuc",ngayghepduccuoi]},{"$lt":["$$this.NgayGhepDuc","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]},{"$eq":["$$value.GhepDuc",False]},{"$or":[{"$eq":["$$this.GhepDuc",True]},{"$eq":["$$this.GhepDucKhongQuaPhoi",True]}]}]},
+                                {"$and":[{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayGhepDuc"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$or":[{"$eq":["$$value.GhepDuc",True]},{"$eq":["$$value.GhepDucKhongQuaPhoi",True]}]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -3003,7 +3016,7 @@ def tongSo_duocKhamThai_sauGhepDuc_ver2(
 
         }},
         {"$match":
-            {"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True}
+            {"$or":[{"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True},{"lanphoicuoi_thangdau.GhepDuc":True}]}
         },
         {"$group":{
             "_id":"null",
@@ -3257,7 +3270,7 @@ def tongSo_coThai_sauGhepDuc_ver2(
     danhsachghepducjoined =""
     soluongghepduc = None
     pipeline = [
-        {"$match": {"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}}},
+        {"$match": {"$or":[{"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}},{"NgayGhepDuc": {"$gte": ngayghepducdau, "$lt": startDate}}]}},
         {"$group":{
             "_id":"$Bo.SoTai",
             "lanphoi":{
@@ -3273,8 +3286,8 @@ def tongSo_coThai_sauGhepDuc_ver2(
         {"$match":{
             "lanphoi":{
                 "$elemMatch":{
-                    "NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi},
-                    "GhepDucKhongQuaPhoi":True
+                    "$or":[{"NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi}},{"NgayGhepDuc":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi}}],
+                    "$or":[{"GhepDucKhongQuaPhoi":True},{"GhepDuc":True}]
                 }
             }
         }},
@@ -3287,7 +3300,9 @@ def tongSo_coThai_sauGhepDuc_ver2(
                         "$cond":[
                             {"$or":[
                                 {"$eq":["$$value.NgayPhoi",None]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]}]}
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayGhepDuc","$$value.NgayPhoi"]},{"$lt":["$$this.NgayGhepDuc",ngayghepduccuoi]},{"$or":[{"$eq":["$$this.GhepDuc",True]},{"$eq":["$$this.GhepDucKhongQuaPhoi",True]}]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayGhepDuc"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$or":[{"$eq":["$$value.GhepDuc",True]},{"$eq":["$$value.GhepDucKhongQuaPhoi",True]}]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -3302,8 +3317,11 @@ def tongSo_coThai_sauGhepDuc_ver2(
                     "in":{
                         "$cond":[
                             {"$or":[
-                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]}]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gte":["$$this.NgayGhepDuc",ngayghepduccuoi]}]},
+                                {"$and":[{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gte":["$$this.NgayGhepDuc",ngayghepduccuoi]},{"$lt":["$$this.NgayGhepDuc","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]},{"$eq":["$$value.GhepDuc",False]},{"$or":[{"$eq":["$$this.GhepDuc",True]},{"$eq":["$$this.GhepDucKhongQuaPhoi",True]}]}]},
+                                {"$and":[{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayGhepDuc"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$or":[{"$eq":["$$value.GhepDuc",True]},{"$eq":["$$value.GhepDucKhongQuaPhoi",True]}]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -3314,7 +3332,7 @@ def tongSo_coThai_sauGhepDuc_ver2(
 
         }},
         {"$match":
-            {"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True}
+            {"$or":[{"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True},{"lanphoicuoi_thangdau.GhepDuc":True}]}
         },
         {"$group":{
             "_id":"null",
@@ -3602,7 +3620,7 @@ def tongSo_khongThai_sauGhepDuc_ver2(
     danhsachghepducjoined =""
     soluongghepduc = None
     pipeline = [
-        {"$match": {"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}}},
+        {"$match": {"$or":[{"NgayPhoi": {"$gte": ngayghepducdau, "$lt": startDate}},{"NgayGhepDuc": {"$gte": ngayghepducdau, "$lt": startDate}}]}},
         {"$group":{
             "_id":"$Bo.SoTai",
             "lanphoi":{
@@ -3619,7 +3637,7 @@ def tongSo_khongThai_sauGhepDuc_ver2(
             "lanphoi":{
                 "$elemMatch":{
                     "NgayPhoi":{"$gte":ngayghepducdau,"$lt":ngayghepduccuoi},
-                    "GhepDucKhongQuaPhoi":True
+                    "$or":[{"GhepDucKhongQuaPhoi":True},{"GhepDuc":True}]
                 }
             }
         }},
@@ -3632,7 +3650,9 @@ def tongSo_khongThai_sauGhepDuc_ver2(
                         "$cond":[
                             {"$or":[
                                 {"$eq":["$$value.NgayPhoi",None]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]}]}
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayGhepDuc","$$value.NgayPhoi"]},{"$lt":["$$this.NgayGhepDuc",ngayghepduccuoi]},{"$or":[{"$eq":["$$this.GhepDuc",True]},{"$eq":["$$this.GhepDucKhongQuaPhoi",True]}]},{"$eq":["$$value.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gt":["$$this.NgayPhoi","$$value.NgayGhepDuc"]},{"$lt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$or":[{"$eq":["$$value.GhepDuc",True]},{"$eq":["$$value.GhepDucKhongQuaPhoi",True]}]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -3647,8 +3667,11 @@ def tongSo_khongThai_sauGhepDuc_ver2(
                     "in":{
                         "$cond":[
                             {"$or":[
-                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]}]},
-                                {"$and":[{"$gt":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]}]}
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$eq":["$$value.NgayPhoi",None]},{"$gte":["$$this.NgayGhepDuc",ngayghepduccuoi]}]},
+                                {"$and":[{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]}]},
+                                {"$and":[{"$gte":["$$this.NgayGhepDuc",ngayghepduccuoi]},{"$lt":["$$this.NgayGhepDuc","$$value.NgayPhoi"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$value.GhepDucKhongQuaPhoi",False]},{"$eq":["$$value.GhepDuc",False]},{"$or":[{"$eq":["$$this.GhepDuc",True]},{"$eq":["$$this.GhepDucKhongQuaPhoi",True]}]}]},
+                                {"$and":[{"$gte":["$$this.NgayPhoi",ngayghepduccuoi]},{"$lt":["$$this.NgayPhoi","$$value.NgayGhepDuc"]},{"$eq":["$$this.GhepDuc",False]},{"$eq":["$$this.GhepDucKhongQuaPhoi",False]},{"$or":[{"$eq":["$$value.GhepDuc",True]},{"$eq":["$$value.GhepDucKhongQuaPhoi",True]}]}]}
                             ]},
                             "$$this",
                             "$$value"
@@ -3659,7 +3682,7 @@ def tongSo_khongThai_sauGhepDuc_ver2(
 
         }},
         {"$match":
-            {"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True}
+            {"$or":[{"lanphoicuoi_thangdau.GhepDucKhongQuaPhoi":True},{"lanphoicuoi_thangdau.GhepDuc":True}]}
         },
         {"$group":{
             "_id":"null",
@@ -6185,7 +6208,7 @@ def khoangCachGiua2LuaDe(
         },
         {
             "$project": {
-                "chenhlech": {"$subtract": ["$luadecuoi", "$luadedau"]},
+                "chenhlech": {"$subtract": ["$luadecuoi.NgaySinh", "$luadedau.NgaySinh"]},
                 "sokyde": {"$subtract": ["$LuaDe", 1]},
             }
         },

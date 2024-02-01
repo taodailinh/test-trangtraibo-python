@@ -804,6 +804,7 @@ def lichSuTiem(checkdate,nhomVaccine):
 
 def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     datetocheck = datetime.strptime(ngaykiemtra,date_format)
+    ngayTiemGanNhatChoPhep = datetocheck - timedelta(days=15)
     # Lấy danh sách ngày tiêm của liệu trình
     nhomvaccineID = None
     nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":vaccine})
@@ -813,6 +814,7 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     else:
         print("Không tìm thấy nhóm vaccine "+nhomVaccine)
     ngaydudieukientiem = []
+    solieutrinh = 0
     lieutrinhtimthays = db.lieutrinhvaccine_aggregate([
         {"$match":{
             "NhomVaccineModel._id":nhomvaccineID
@@ -831,6 +833,7 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     for lieutrinhtimthay in lieutrinhtimthays:
         if lieutrinhtimthay is not None:
             ngaydudieukientiem = [datetocheck - timedelta(days=number) for number in lieutrinhtimthay["ngaytuoi"]]
+            solieutrinh = len(ngaydudieukientiem)
     for ngay in ngaydudieukientiem:
         print(ngay)
     # Lấy danh sách vaccine và số ngày bảo hộ
@@ -842,23 +845,24 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     results = db.bonhaptrai_aggregate([
         {"$match":{
             "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]},
+            # "SoTai":"0M-2302271",
             "PhanLoaiBo":{"$nin":["BoMangThaiLon","BoChoDe"]}
         }},
         {"$group":{
             "_id":"null",
-            "danhsachsotai":{
-                "$push":"$SoTai"
+            "danhsach":{
+                "$push":{"SoTai":"$SoTai","NgaySinh":"$NgaySinh"}
             }
         }},
         {"$project":{
             "_id":0,
-            "danhsachsotai":1
+            "danhsach":1
         }}
     ])
-    danhsachsotaibonhaptrai = ""
+    danhsachbonhaptrai = []
     for result in results:
         if result is not None:
-            danhsachsotaibonhaptrai = ";".join(map(str,result["danhsachsotai"]))
+            danhsachbonhaptrai = result["danhsach"]
     b = time.time()
     print("Thoi gian tim kiem bo: "+str(b-a))
     # Lấy danh sách bò đã tiêm cùng với số mũi tiêm, ngày tiêm gần nhất của nhóm vaccine đó, ngày tiêm gần nhất của 1 vaccine bất kỳ
@@ -867,39 +871,83 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     results = db.vaccine_aggregate([
         {"$match":{
             "DaHoanThanh":True,
+            # "Bo.SoTai":"0M-2302271"
         }},
         {
             "$group": {
                 "_id": "$Bo._id",
                 "SoTai":{"$first":"$Bo.SoTai"},
                 "soluong": {"$sum": 1},
-                "thongtintiemvaccine":{"$push":{"NgayThucHien":"$NgayThucHien","VaccineId":"$DanhMucVaccine._id"}}
+                "thongtintiemvaccine":{"$push":{"NgayThucHien":"$NgayThucHien","VaccineId":"$DanhMucVaccine._id","NhomVaccineID":"$NhomVaccine._id"}},
+                # "thongtintiemvaccinenay":{}
             }
         },
         {
-            "$set":{
-                "lantiemcuoi":{
-                    "$reduce":{
-                        "input":"$thongtintiemvaccine",
-                        "initialValue":{"NgayThucHien":None},
-                        "in":{
-                            "$cond":[
-                                {"$or":[{"$gt":["$$this.NgayThucHien","$$value.NgayThucHien"]},{"$eq":["$$value.NgayThucHien",None]}]},"$$this","$$value"
+            "$set": {
+                "lantiemcuoi": {
+                    "$reduce": {
+                        "input": "$thongtintiemvaccine",
+                        "initialValue": {"NgayThucHien": None},
+                        "in": {
+                            "$cond": [
+                                {
+                                    "$or": [
+                                        {"$gt": ["$$this.NgayThucHien", "$$value.NgayThucHien"]},
+                                        {"$eq": ["$$value.NgayThucHien", None]}
+                                    ]
+                                },
+                                "$$this",
+                                "$$value"
                             ]
                         }
                     }
                 },
-                "lantiemcuoi_vaccinenay":{
-                    "$reduce":{
-                        "input":"$thongtintiemvaccine",
-                        "initialValue":{"NgayThucHien":None},
-                        "in":{
-                            "$cond":[
-                                {"$and":[{"$or":[{"$gt":["$$this.NgayThucHien","$$value.NgayThucHien"]},{"$eq":["$$value.NgayThucHien",None]}]},{"$eq":["$$this.DanhMucVaccine.NhomVaccineModel._id",nhomvaccineID]}]},"$$this","$$value"
-                            ]
+                "SoLanTiem":{
+                    "$size":{
+                        "$filter":{
+                            "input":"$thongtintiemvaccine",
+                            "as":"item",
+                            "cond":{
+                                "$eq":["$$item.NhomVaccineID",nhomvaccineID]
+                            }
                         }
                     }
-                }
+                },
+                "lantiemcuoi_vaccinenay": {
+                    "$reduce": {
+                        "input": "$thongtintiemvaccine",
+                        "initialValue": {"NgayThucHien": None},
+                        "in": {
+                            "$let": {
+                                "vars": {
+                                    "nhomvaccineID": nhomvaccineID
+                                },
+                                "in": {
+                                    "$cond": {
+                                        "if": {
+                                            "$or": [
+                                                {
+                                                    "$and": [
+                                                        {"$gt": ["$$this.NgayThucHien", "$$value.NgayThucHien"]},
+                                                        {"$eq": ["$$this.NhomVaccineID", "$$nhomvaccineID"]}
+                                                    ]
+                                                },
+                                                {
+                                                    "$and": [
+                                                        {"$eq": ["$$value.NgayThucHien", None]},
+                                                        {"$eq": ["$$this.NhomVaccineID", "$$nhomvaccineID"]}
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "then": "$$this",
+                                        "else": "$$value"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
             }
         },
         {"$group":{
@@ -908,9 +956,11 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
             "danhsach":{
                 "$push":
                 {"SoTai":"$SoTai",
+                "SoLanTiem":"$SoLanTiem",
                 "NgayTiemCuoi":"$lantiemcuoi.NgayThucHien",
-                "NgayTiemCuoi_VaccineNay":"$lantiemcuoi_vaccinenay.NgayThucHien"
-                }            }
+                "NgayTiemCuoi_VaccineNay":"$lantiemcuoi_vaccinenay.NgayThucHien",
+                "NgayTiemCuoi_VaccineNay_id":"$lantiemcuoi_vaccinenay.VaccineId"
+                }}
         }},
         {
             "$project": {
@@ -922,20 +972,79 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     ])
     for result in results:
         if result is not None:
-            danhsachboduoctiem = set(result[danhsach])
-            print("So luong bo duoc tiem: "+str(result["soluong"]))
+            danhsachboduoctiem = result["danhsach"]
+            # print("So luong bo duoc tiem: "+str(result["soluong"]))
+    lookup_dict = {item['_id']: item['ChuKyTiem'] for item in vaccines}
+
+    for item in danhsachboduoctiem:
+        if 'NgayTiemCuoi_VaccineNay_id' in item:
+            idVaccine = item['NgayTiemCuoi_VaccineNay_id']
+            if idVaccine in lookup_dict:
+                item['NgayTiemTiepTheo'] =item["NgayTiemCuoi_VaccineNay"] + timedelta(days=lookup_dict[idVaccine])
+                # print(str(item["NgayTiemTiepTheo"]))
+            else:
+                print("Không tìm thấy vaccine: "+idVaccine)
+                item['NgayTiemTiepTheo'] = item["NgayTiemCuoi_VaccineNay"]+timedelta(days=270)
+                # print(str(item["NgayTiemTiepTheo"]))
     b = time.time()
     print("Thời gian tính số lượng bò được tiêm vaccine: "+str(b-a))
     # Lọc ra danh sách bò:
+    sotai_duoctiem = {item["SoTai"]:item for item in danhsachboduoctiem}
+        
+    danhsachbodudieukientiem = []
+    for bo in danhsachbonhaptrai:
+        soTai = bo["SoTai"]
+        ngaySinh = bo["NgaySinh"]
+        # print("Ngày sinh: "+str(ngaySinh))
+        matchlstiem = sotai_duoctiem.get(soTai)
+        if not ngaySinh:
+            if matchlstiem is None:
+                danhsachbodudieukientiem.append(soTai)
+            else:
+                # print("Ngày tiêm cuối vaccine này: "+str(matchlstiem["NgayTiemCuoi_VaccineNay"]))
+                if "NgayTiemTiepTheo" in matchlstiem:
+                    # print("Ngày tiêm tiếp theo: "+str(matchlstiem["NgayTiemTiepTheo"]))
+                    # print("Ngày kiểm tra: "+str(datetocheck))
+                    # print("Ngày tiêm cuối: "+str(matchlstiem["NgayTiemCuoi"]))
+                    if matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep and matchlstiem["NgayTiemTiepTheo"] <=datetocheck:
+                        danhsachbodudieukientiem.append(soTai)
+                    # else:
+                        # print("Ngày tiêm cuối vaccine này: "+str(matchlstiem["NgayTiemCuoi_VaccineNay"])+";"+matchlstiem["NgayTiemCuoi_VaccineNay_id"])
+                        # print("Không tính được ngày tiêm tiếp theo: "+soTai)
+            # and matchlstiem["NgayTiemCuoi_VaccineNay"] is None:
+            
         # Bò ngày sinh null
             # chưa tiêm lần nào & ngày tiêm gần nhất không quá 15 ngày
             # đã có tiêm & ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra
         # Bò có ngày sinh:
+        else:
             # số lần tiêm ít hơn số liệu trình
+            # Chưa tiêm lần nào
+            if matchlstiem is None:
+                # print("Ngày đủ tiều kiện tiêm: "+str(ngaydudieukientiem[0]))
+                if ngaySinh < ngaydudieukientiem[0]:
+                    danhsachbodudieukientiem.append(soTai)
+            else:
+                # print("Số lần tiêm: "+str(matchlstiem["SoLanTiem"]))
+                # print("Số liệu trình: "+str(solieutrinh))
+                if matchlstiem["SoLanTiem"] < solieutrinh:
+                    # print("Số lần tiêm: "+str(matchlstiem["SoLanTiem"]))
+                    # print("Số liệu trình: "+str(solieutrinh))
+                    # print("Số lần tiêm ít hơn số liệu trình")
+                    if ngaySinh <= ngaydudieukientiem[matchlstiem["SoLanTiem"]] and matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep:
+                        danhsachbodudieukientiem.append(soTai)
+                else:
+                    if "NgayTiemTiepTheo" in matchlstiem:
+                        # print("Ngày tiêm tiếp theo: "+str(matchlstiem["NgayTiemTiepTheo"]))
+                        if matchlstiem["NgayTiemTiepTheo"] <= datetocheck and matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep:
+                            danhsachbodudieukientiem.append(soTai)
                 # => ngày sinh lớn hơn ngày tuổi tối thiểu tiêm liệu trình đó & tiêm không quá 15 ngày
             # số lần tiêm nhiều hơn số liệu trình
                 # =>  ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra & ngày tiêm gần nhất hơn 15 ngày trước
     # Lưu danh sách bò vào db
+    # for i in range(0,10):
+    #     print(danhsachbodudieukientiem[i])
+    danhsachbodudieukientiemjoined = ";".join(map(str,danhsachbodudieukientiem))
     reportName = "Danh sách bò đủ điều kiện tiêm vaccine "+vaccine
     test_result = {
         "NoiDung":reportName,
@@ -943,7 +1052,8 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
         # "SoLuong":soluong,
         # "ThongTinTiemVaccine":thongtintiemvaccine,
         "NgayKiemTra":datetocheck,
-        "BoTrongTrai":danhsachsotaibonhaptrai
+        "DanhSachSoTai":danhsachbodudieukientiemjoined
+        # "BoTrongTrai":danhsachsotaibonhaptrai
     }
     test_result_collection.baocaothang.update_one(
         {"_id": testResultId}, {"$push": {"KetQua": test_result}}

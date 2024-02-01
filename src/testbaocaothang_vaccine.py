@@ -10,8 +10,8 @@ user = "admin"
 password = "admintest"
 
 startDate = "2024-01-01"
-endDate = "2024-01-28"
-today = "2024-01-28"
+endDate = "2024-01-31"
+today = "2024-01-31"
 
 danhsachnhombo = ["XuatBan", "Bo", "Be"]
 

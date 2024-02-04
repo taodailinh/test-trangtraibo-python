@@ -93,6 +93,7 @@ lanPhoi3 = {"min": 3, "max": 999}
 
 """
 
+"""
 
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 phoiGiong.tongSoBoThanhLy_BoDucGiong(startDate, endDate, boDucGiong)
@@ -163,7 +164,6 @@ phoiGiong.tyLe_dauThai_trungBinh(startDate,endDate)
 
 
 
-"""
 for bo in giongBo:
     print("Giống bò " + bo + " :")
     # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò lần 1

@@ -98,143 +98,143 @@ def soluongBoKham(startdate, enddate):
         return 1
 
 
-def soluongBoKhamPhoiLan1(startdate, enddate):
-    try:
-        date_format = "%Y-%m-%d"
-        startDate = datetime.strptime(startdate, date_format)
-        endDate = datetime.strptime(enddate, date_format)
-        pipeline = [
-            {
-                "$lookup": {
-                    "from": "BoNhapTrai",
-                    "localField": "Bo.SoTai",
-                    "foreignField": "SoTai",
-                    "as": "bo",
-                }
-            },
-            {
-                "$match": {
-                    "NgayKham": {"$gte": startDate, "$lte": endDate},
-                    "KetQuaKham": "Có thai",
-                    "$expr": {
-                        "$eq": [
-                            {
-                                "$arrayElemAt": [
-                                    "$bo.ThongTinPhoiGiongs.LanPhoi",
-                                    -1,
-                                ],
-                            },
-                            1,
-                        ],
-                    },
-                }
-            },
-            {
-                "$group": {
-                    "_id": "null",
-                    "total": {"$count": {}},
-                }
-            },
-        ]
-        soluongBoKhamThai = db.khamthai.aggregate(pipeline)
-        for bo in soluongBoKhamThai:
-            print("Số lượng bò:" + str(bo.get("total")))
-        return 0
-    except:
-        print("There is something wrong")
-        return 1
+# def soluongBoKhamPhoiLan1(startdate, enddate):
+#     try:
+#         date_format = "%Y-%m-%d"
+#         startDate = datetime.strptime(startdate, date_format)
+#         endDate = datetime.strptime(enddate, date_format)
+#         pipeline = [
+#             {
+#                 "$lookup": {
+#                     "from": "BoNhapTrai",
+#                     "localField": "Bo.SoTai",
+#                     "foreignField": "SoTai",
+#                     "as": "bo",
+#                 }
+#             },
+#             {
+#                 "$match": {
+#                     "NgayKham": {"$gte": startDate, "$lte": endDate},
+#                     "KetQuaKham": "Có thai",
+#                     "$expr": {
+#                         "$eq": [
+#                             {
+#                                 "$arrayElemAt": [
+#                                     "$bo.ThongTinPhoiGiongs.LanPhoi",
+#                                     -1,
+#                                 ],
+#                             },
+#                             1,
+#                         ],
+#                     },
+#                 }
+#             },
+#             {
+#                 "$group": {
+#                     "_id": "null",
+#                     "total": {"$count": {}},
+#                 }
+#             },
+#         ]
+#         soluongBoKhamThai = db.khamthai.aggregate(pipeline)
+#         for bo in soluongBoKhamThai:
+#             print("Số lượng bò:" + str(bo.get("total")))
+#         return 0
+#     except:
+#         print("There is something wrong")
+#         return 1
 
 
 # Lấy danh sách bò có lần phối cuối cùng thỏa mãn điều kiện
-def boPhoiLan1():
-    startDate = datetime(2023, 9, 1)
-    endDate = datetime(2023, 9, 18)
-    pipeline = [
-        # Giới hạn ngày giờ
-        {
-            "$match": {
-                "$NgayThucHien": {
-                    "$gte": startDate,
-                    "$lte": endDate,
-                },
-                "$LanPhoi": 1,
-            }
-        },
-        # group lại
-        {
-            "$group": {
-                "_id": "$SoTai",
-            }
-        },
-        # project ra document
-        {"$project": {"_id": 0, "$count": "Tongsoluong"}},
-    ]
-    results = db.bonhaptrai.aggregate(pipeline)
-    for result in results:
-        print(result)
+# def boPhoiLan1():
+#     startDate = datetime(2023, 9, 1)
+#     endDate = datetime(2023, 9, 18)
+#     pipeline = [
+#         # Giới hạn ngày giờ
+#         {
+#             "$match": {
+#                 "$NgayThucHien": {
+#                     "$gte": startDate,
+#                     "$lte": endDate,
+#                 },
+#                 "$LanPhoi": 1,
+#             }
+#         },
+#         # group lại
+#         {
+#             "$group": {
+#                 "_id": "$SoTai",
+#             }
+#         },
+#         # project ra document
+#         {"$project": {"_id": 0, "$count": "Tongsoluong"}},
+#     ]
+#     results = db.bonhaptrai.aggregate(pipeline)
+#     for result in results:
+#         print(result)
 
 
 # Tong so bo theo nhom
-def thongTinDan_tongSoBo(
-    startdate,
-    enddate,
-    nhomphanloai,
-    gioitinh=gioiTinhTatCa,
-    nhombo=tatCaNhomBo,
-):
-    startDate = datetime.strptime(startdate, date_format)
-    endDate = datetime.strptime(enddate, date_format)
-    pipeline = [
-        {
-            "$match": {
-                "$and": [
-                    {"NhomBo": {"$in": nhombo["danhsach"]}},
-                    {"PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
-                    {"GioiTinhBe": {"$in": gioitinh["danhsach"]}},
-                ]
-            }
-        },
-        {
-            "$group": {
-                "_id": "null",
-                "soluong": {"$count": {}},
-                "danhsachsotai": {"$push": "SoTai"},
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "soluong": 1,
-                "danhsachsotaijoined": {
-                    "$reduce": {
-                        "input": "$danhsachsotai",
-                        "initialValue": "",
-                        "in": {
-                            "$concat": [
-                                "$$value",
-                                {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
-                                "$$this",
-                            ]
-                        },
-                    }
-                },
-            }
-        },
-    ]
-    # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
-    # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
-    results = db.bonhaptrai.aggregate(pipeline)
-    reportName = (
-        "Số lượng "
-        + nhombo["tennhom"]
-        + " "
-        + " - "
-        + (nhomphanloai["tennhom"])
-        + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
-    )
-    print(reportName)
-    for result in results:
-        print("   Số lượng:" + str(result["soluong"]))
+# def thongTinDan_tongSoBo(
+#     startdate,
+#     enddate,
+#     nhomphanloai,
+#     gioitinh=gioiTinhTatCa,
+#     nhombo=tatCaNhomBo,
+# ):
+#     startDate = datetime.strptime(startdate, date_format)
+#     endDate = datetime.strptime(enddate, date_format)
+#     pipeline = [
+#         {
+#             "$match": {
+#                 "$and": [
+#                     {"NhomBo": {"$in": nhombo["danhsach"]}},
+#                     {"PhanLoaiBo": {"$in": nhomphanloai["danhsach"]}},
+#                     {"GioiTinhBe": {"$in": gioitinh["danhsach"]}},
+#                 ]
+#             }
+#         },
+#         {
+#             "$group": {
+#                 "_id": "null",
+#                 "soluong": {"$count": {}},
+#                 "danhsachsotai": {"$push": "SoTai"},
+#             }
+#         },
+#         {
+#             "$project": {
+#                 "_id": 0,
+#                 "soluong": 1,
+#                 "danhsachsotaijoined": {
+#                     "$reduce": {
+#                         "input": "$danhsachsotai",
+#                         "initialValue": "",
+#                         "in": {
+#                             "$concat": [
+#                                 "$$value",
+#                                 {"$cond": [{"$eq": ["$$value", ""]}, "", ";"]},
+#                                 "$$this",
+#                             ]
+#                         },
+#                     }
+#                 },
+#             }
+#         },
+#     ]
+#     # gioiTinhRaw = ["" if x is None else x for x in gioitinh["tennhom"]]
+#     # gioiTinhLoaiNullJoined = " & ".join([x for x in gioiTinhRaw if x])
+#     results = db.bonhaptrai.aggregate(pipeline)
+#     reportName = (
+#         "Số lượng "
+#         + nhombo["tennhom"]
+#         + " "
+#         + " - "
+#         + (nhomphanloai["tennhom"])
+#         + ((" " + gioitinh["tennhom"]) if gioitinh["tennhom"] else "")
+#     )
+#     print(reportName)
+#     for result in results:
+#         print("   Số lượng:" + str(result["soluong"]))
 
 
 # # Tổng số bò theo nghiệp vụ
@@ -387,7 +387,7 @@ def tongSoBoThanhLy_BoDucGiong(
         {
             "$group": {
                 "_id": "null",
-                "soluong": {"$count": {}},
+                "soluong": {"$sum": 1},
                 "danhsachsotai": {"$push": "SoTai"},
             }
         },

@@ -9,9 +9,9 @@ page = "https://test-trangtrai.aristqnu.com/"
 user = "admin"
 password = "admintest"
 
-startDate = "2024-01-01"
-endDate = "2024-01-31"
-today = "2024-01-31"
+startDate = "2024-02-01"
+endDate = "2024-02-04"
+today = "2024-02-04"
 
 danhsachnhombo = ["XuatBan", "Bo", "Be"]
 

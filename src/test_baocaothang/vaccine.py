@@ -27,6 +27,7 @@ else:
 giaiDoanBoVoBeo = ["BoVoBeoNho", "BoVoBeoTrung", "BoVoBeoLon"]
 
 giaiDoanBoChoPhoi = ["BoChoPhoi", "BoHauBiChoPhoi"]
+bomangthai = ["BoMangThaiNho","BoMangThaiLon","BoChoDe"]
 
 tatCaNhomBoSong = {
     "tennhom": "bò",
@@ -802,9 +803,11 @@ def lichSuTiem(checkdate,nhomVaccine):
     print("Hoàn tất tính danh sách bò cần tiêm: "+str(endTime-startTime))
 
 
-def danhsachbodudieukientiem(vaccine,ngaykiemtra):
+def danhsachbodudieukientiem(vaccine,ngaykiemtra,tiemtoandan=False):
     datetocheck = datetime.strptime(ngaykiemtra,date_format)
-    ngayTiemGanNhatChoPhep = datetocheck - timedelta(days=15)
+    ngayTiemGanNhatChoPhep = datetocheck - timedelta(days=14)
+    ngaymangthaitoidachophep = datetocheck - timedelta(days=240)
+    ngaysinhcuabo = datetocheck - timedelta(days=270)
     # Lấy danh sách ngày tiêm của liệu trình
     nhomvaccineID = None
     nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":vaccine})
@@ -845,13 +848,12 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
     results = db.bonhaptrai_aggregate([
         {"$match":{
             "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]},
-            # "SoTai":"0M-2302271",
-            "PhanLoaiBo":{"$nin":["BoMangThaiLon","BoChoDe"]}
+            # "SoTai":"I0721B13269",
         }},
         {"$group":{
             "_id":"null",
             "danhsach":{
-                "$push":{"SoTai":"$SoTai","NgaySinh":"$NgaySinh"}
+                "$push":{"SoTai":"$SoTai","NgaySinh":"$NgaySinh","PhanLoaiBo":"$PhanLoaiBo"}
             }
         }},
         {"$project":{
@@ -864,14 +866,66 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
         if result is not None:
             danhsachbonhaptrai = result["danhsach"]
     b = time.time()
-    print("Thoi gian tim kiem bo: "+str(b-a))
+
+
+    # Lấy danh sách ngày mang thai của bò
+    danhsachngaymangthai = []
+    results = db.khamthai_aggregate([
+        {"$match":{"DaKham":True}},
+        {
+            "$group":{
+                "_id":"$Bo._id",
+                "SoTai":{
+                    "$first":"$Bo.SoTai"
+                },
+                "lankham":{
+                    "$push":{
+                        "NgayKham":"$NgayKham",
+                        "CoThai":"$CoThai",
+                        "NgayMangThai":"$NgayMangThai"
+                    }
+                }
+            }
+        },
+        {"$set":{
+            "lankhamcuoi":{
+                "$reduce":{
+                    "input":"$lankham",
+                    "initialValue":{"NgayKham":None},
+                    "in":{
+                        "$cond":[
+                            {"$or":[
+                                {"$eq":["$$value.NgayKham",None]},
+                                {"$gt":["$$this.NgayKham","$$value.NgayKham"]}
+                            ]},
+                            "$$this",
+                            "$$value"
+                        ]
+                    }
+                }
+            }
+        }},
+        {"$match":{
+            "lankhamcuoi.CoThai":True
+        }},
+        {"$group":{
+            "_id":"null",
+            "danhsachsotai":{"$push":{"SoTai":"$SoTai","NgayMangThai":"$lankhamcuoi.NgayMangThai"}}
+        }},
+        {"$project":{
+            "_id":0,
+            "danhsachsotai":1
+        }}
+    ])
+    for result in results:
+        danhsachngaymangthai = result["danhsachsotai"]
     # Lấy danh sách bò đã tiêm cùng với số mũi tiêm, ngày tiêm gần nhất của nhóm vaccine đó, ngày tiêm gần nhất của 1 vaccine bất kỳ
     a = time.time()
     danhsachboduoctiem = []
     results = db.vaccine_aggregate([
         {"$match":{
             "DaHoanThanh":True,
-            # "Bo.SoTai":"0M-2302271"
+            # "Bo.SoTai":"I0721B13269"
         }},
         {
             "$group": {
@@ -975,72 +1029,94 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra):
             danhsachboduoctiem = result["danhsach"]
             # print("So luong bo duoc tiem: "+str(result["soluong"]))
     lookup_dict = {item['_id']: item['ChuKyTiem'] for item in vaccines}
-
+    tylebaoho = 1
+    if tiemtoandan is True:
+        tylebaoho = 2/3
     for item in danhsachboduoctiem:
         if 'NgayTiemCuoi_VaccineNay_id' in item:
             idVaccine = item['NgayTiemCuoi_VaccineNay_id']
             if idVaccine in lookup_dict:
-                item['NgayTiemTiepTheo'] =item["NgayTiemCuoi_VaccineNay"] + timedelta(days=lookup_dict[idVaccine])
+                item['NgayTiemTiepTheo'] =item["NgayTiemCuoi_VaccineNay"] + timedelta(days=lookup_dict[idVaccine]*tylebaoho)
                 # print(str(item["NgayTiemTiepTheo"]))
             else:
                 print("Không tìm thấy vaccine: "+idVaccine)
-                item['NgayTiemTiepTheo'] = item["NgayTiemCuoi_VaccineNay"]+timedelta(days=270)
+                item['NgayTiemTiepTheo'] = item["NgayTiemCuoi_VaccineNay"]+timedelta(days=270*tylebaoho)
                 # print(str(item["NgayTiemTiepTheo"]))
     b = time.time()
     print("Thời gian tính số lượng bò được tiêm vaccine: "+str(b-a))
     # Lọc ra danh sách bò:
     sotai_duoctiem = {item["SoTai"]:item for item in danhsachboduoctiem}
-        
+    sotai_mangthai = {item["SoTai"]:item for item in danhsachngaymangthai}
     danhsachbodudieukientiem = []
     for bo in danhsachbonhaptrai:
         soTai = bo["SoTai"]
         ngaySinh = bo["NgaySinh"]
+        # print(bo["PhanLoaiBo"])
         # print("Ngày sinh: "+str(ngaySinh))
-        matchlstiem = sotai_duoctiem.get(soTai)
-        if not ngaySinh:
-            if matchlstiem is None:
-                danhsachbodudieukientiem.append(soTai)
-            else:
-                # print("Ngày tiêm cuối vaccine này: "+str(matchlstiem["NgayTiemCuoi_VaccineNay"]))
-                if "NgayTiemTiepTheo" in matchlstiem:
-                    # print("Ngày tiêm tiếp theo: "+str(matchlstiem["NgayTiemTiepTheo"]))
-                    # print("Ngày kiểm tra: "+str(datetocheck))
-                    # print("Ngày tiêm cuối: "+str(matchlstiem["NgayTiemCuoi"]))
-                    if matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep and matchlstiem["NgayTiemTiepTheo"] <=datetocheck:
-                        danhsachbodudieukientiem.append(soTai)
-                    # else:
-                        # print("Ngày tiêm cuối vaccine này: "+str(matchlstiem["NgayTiemCuoi_VaccineNay"])+";"+matchlstiem["NgayTiemCuoi_VaccineNay_id"])
-                        # print("Không tính được ngày tiêm tiếp theo: "+soTai)
-            # and matchlstiem["NgayTiemCuoi_VaccineNay"] is None:
-            
-        # Bò ngày sinh null
-            # chưa tiêm lần nào & ngày tiêm gần nhất không quá 15 ngày
-            # đã có tiêm & ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra
-        # Bò có ngày sinh:
+        matchngaymangthai = sotai_mangthai.get(soTai)
+        # print("Ngày mang thai "+str(matchngaymangthai["NgayMangThai"]))
+        if bo["PhanLoaiBo"] in bomangthai and matchngaymangthai is not None and matchngaymangthai["NgayMangThai"] < ngaymangthaitoidachophep:
+            print("Bò mang thai lớn hơn 240 ngày")
         else:
-            # số lần tiêm ít hơn số liệu trình
-            # Chưa tiêm lần nào
-            if matchlstiem is None:
-                # print("Ngày đủ tiều kiện tiêm: "+str(ngaydudieukientiem[0]))
-                if ngaySinh < ngaydudieukientiem[0]:
+            matchlstiem = sotai_duoctiem.get(soTai)
+            if not ngaySinh:
+                # print("Không có ngày sinh")
+                if matchlstiem is None:
+                    # print("Chưa được tiêm lần nào")
                     danhsachbodudieukientiem.append(soTai)
+                else:
+                    # print("Ngày tiêm cuối vaccine này: "+str(matchlstiem["NgayTiemCuoi_VaccineNay"]))
+                    if "NgayTiemTiepTheo" in matchlstiem:
+                        # print("Có ngày tiêm tiếp theo")
+                        # print("Ngày tiêm tiếp theo: "+str(matchlstiem["NgayTiemTiepTheo"]))
+                        # print("Ngày kiểm tra: "+str(datetocheck))
+                        # print("Ngày tiêm cuối: "+str(matchlstiem["NgayTiemCuoi"]))
+                        if matchlstiem["NgayTiemCuoi"] < ngayTiemGanNhatChoPhep and matchlstiem["NgayTiemTiepTheo"] <=datetocheck:
+                            # print("Ngày tiêm tiếp theo nhỏ hơn ngày kiểm tra")
+                            danhsachbodudieukientiem.append(soTai)
+                        # else:
+                            # print("Ngày tiêm cuối vaccine này: "+str(matchlstiem["NgayTiemCuoi_VaccineNay"])+";"+matchlstiem["NgayTiemCuoi_VaccineNay_id"])
+                            # print("Không tính được ngày tiêm tiếp theo: "+soTai)
+                    elif matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep:
+                        # print("Bò chưa tiêm lần nào và đủ ngày tiêm 15 ngày")
+                        danhsachbodudieukientiem.append(soTai)
+                # and matchlstiem["NgayTiemCuoi_VaccineNay"] is None:
+                
+            # Bò ngày sinh null
+                # chưa tiêm lần nào & ngày tiêm gần nhất không quá 15 ngày
+                # đã có tiêm & ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra
+            # Bò có ngày sinh:
             else:
-                # print("Số lần tiêm: "+str(matchlstiem["SoLanTiem"]))
-                # print("Số liệu trình: "+str(solieutrinh))
-                if matchlstiem["SoLanTiem"] < solieutrinh:
-                    # print("Số lần tiêm: "+str(matchlstiem["SoLanTiem"]))
-                    # print("Số liệu trình: "+str(solieutrinh))
-                    # print("Số lần tiêm ít hơn số liệu trình")
-                    if ngaySinh <= ngaydudieukientiem[matchlstiem["SoLanTiem"]] and matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep:
+                # print("Bò có ngày sinh")
+                # số lần tiêm ít hơn số liệu trình
+                # Chưa tiêm lần nào
+                if matchlstiem is None:
+                    # print("Chưa tiêm cái gì")
+                    # print("Ngày đủ tiều kiện tiêm: "+str(ngaydudieukientiem[0]))
+                    if ngaySinh < ngaydudieukientiem[0]:
+                        # print("Ngày sinh trước ngày đủ tiêm lần đầu")
                         danhsachbodudieukientiem.append(soTai)
                 else:
-                    if "NgayTiemTiepTheo" in matchlstiem:
-                        # print("Ngày tiêm tiếp theo: "+str(matchlstiem["NgayTiemTiepTheo"]))
-                        if matchlstiem["NgayTiemTiepTheo"] <= datetocheck and matchlstiem["NgayTiemCuoi"] <= ngayTiemGanNhatChoPhep:
+                    # print("Số lần tiêm: "+str(matchlstiem["SoLanTiem"]))
+                    # print("Số liệu trình: "+str(solieutrinh))
+                    if matchlstiem["SoLanTiem"] < solieutrinh:
+                        # print("Số lần tiêm ít hơn số liệu trình và vẫn còn là bê")
+                        # print("Số lần tiêm: "+str(matchlstiem["SoLanTiem"]))
+                        # print("Số liệu trình: "+str(solieutrinh))
+                        # print("Số lần tiêm ít hơn số liệu trình")
+                        if ngaySinh <= ngaydudieukientiem[matchlstiem["SoLanTiem"]] and matchlstiem["NgayTiemCuoi"] < ngayTiemGanNhatChoPhep:
+                            # print("Ngày sinh trước ngày đủ điều kiện tiêm liệu trình đó và ngày tiêm cuối đủ điều kiện")
                             danhsachbodudieukientiem.append(soTai)
-                # => ngày sinh lớn hơn ngày tuổi tối thiểu tiêm liệu trình đó & tiêm không quá 15 ngày
-            # số lần tiêm nhiều hơn số liệu trình
-                # =>  ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra & ngày tiêm gần nhất hơn 15 ngày trước
+                    else:
+                        if "NgayTiemTiepTheo" in matchlstiem:
+                            # print("Có ngày tiêm tiếp theo")
+                            # print("Ngày tiêm tiếp theo: "+str(matchlstiem["NgayTiemTiepTheo"]))
+                            if matchlstiem["NgayTiemTiepTheo"] <= datetocheck and matchlstiem["NgayTiemCuoi"] < ngayTiemGanNhatChoPhep:
+                                # print("Ngày tiêm tiếp theo nhỏ hơn ngày kiểm tra và ngày tiêm cuối đủ điều kiện")
+                                danhsachbodudieukientiem.append(soTai)
+                    # => ngày sinh lớn hơn ngày tuổi tối thiểu tiêm liệu trình đó & tiêm không quá 15 ngày
+                # số lần tiêm nhiều hơn số liệu trình
+                    # =>  ngày tiêm tiếp theo lớn hơn hoặc bằng ngày kiểm tra & ngày tiêm gần nhất hơn 15 ngày trước
     # Lưu danh sách bò vào db
     # for i in range(0,10):
     #     print(danhsachbodudieukientiem[i])

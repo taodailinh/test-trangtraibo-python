@@ -808,6 +808,7 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra,tiemtoandan=False):
     ngayTiemGanNhatChoPhep = datetocheck - timedelta(days=14)
     ngaymangthaitoidachophep = datetocheck - timedelta(days=240)
     ngaysinhcuabo = datetocheck - timedelta(days=270)
+    songaybaohotoithieu = None
     # Lấy danh sách ngày tiêm của liệu trình
     nhomvaccineID = None
     nhomvaccine = db.nhomvaccine_find({"MaNhomVaccine":vaccine})
@@ -841,30 +842,37 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra,tiemtoandan=False):
         print(ngay)
     # Lấy danh sách vaccine và số ngày bảo hộ
     vaccines = danhsachvaccine(vaccine)
+    songaybaohotoithieu = min(vaccines, key=lambda vacc: vacc["ChuKyTiem"])["ChuKyTiem"]
+    print("Số ngày bảo hộ tối thiểu: "+str(songaybaohotoithieu))
+
     for tenvaccine in vaccines:
         print(tenvaccine)
     # Lấy danh sách bò nhập trại không nằm trong nhóm loại trừ, có ngày sinh lớn hơn ngày sinh yêu cầu của liệu trình đầu tiên
     a = time.time()
-    results = db.bonhaptrai_aggregate([
-        {"$match":{
-            "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]},
-            # "SoTai":"I0721B13269",
-        }},
-        {"$group":{
-            "_id":"null",
-            "danhsach":{
-                "$push":{"SoTai":"$SoTai","NgaySinh":"$NgaySinh","PhanLoaiBo":"$PhanLoaiBo"}
-            }
-        }},
-        {"$project":{
-            "_id":0,
-            "danhsach":1
-        }}
-    ])
+
+    results = db.bonhaptrai_find({ "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]}},{"SoTai":1,"NgaySinh":1,"PhanLoaiBo":1})
+
+    # results = db.bonhaptrai_aggregate([
+    #     {"$match":{
+    #         "NhomBo":{"$in":["Bo","Be","BoChuyenVoBeo","BoDucGiong"]},
+    #         # "SoTai":"I0721B13269",
+    #     }},
+    #     {"$group":{
+    #         "_id":"null",
+    #         "danhsach":{
+    #             "$push":{"SoTai":"$SoTai","NgaySinh":"$NgaySinh","PhanLoaiBo":"$PhanLoaiBo"}
+    #         }
+    #     }},
+    #     {"$project":{
+    #         "_id":0,
+    #         "danhsach":1
+    #     }}
+    # ])
     danhsachbonhaptrai = []
-    for result in results:
-        if result is not None:
-            danhsachbonhaptrai = result["danhsach"]
+    # for result in results:
+    #     if result is not None:
+    #         danhsachbonhaptrai = result["danhsach"]
+    danhsachbonhaptrai = list(results)
     b = time.time()
 
 
@@ -1039,8 +1047,8 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra,tiemtoandan=False):
                 item['NgayTiemTiepTheo'] =item["NgayTiemCuoi_VaccineNay"] + timedelta(days=lookup_dict[idVaccine]*tylebaoho)
                 # print(str(item["NgayTiemTiepTheo"]))
             else:
-                print("Không tìm thấy vaccine: "+idVaccine)
-                item['NgayTiemTiepTheo'] = item["NgayTiemCuoi_VaccineNay"]+timedelta(days=270*tylebaoho)
+                # print("Không tìm thấy vaccine: "+idVaccine)
+                item['NgayTiemTiepTheo'] = item["NgayTiemCuoi_VaccineNay"]+timedelta(days=songaybaohotoithieu*tylebaoho)
                 # print(str(item["NgayTiemTiepTheo"]))
     b = time.time()
     print("Thời gian tính số lượng bò được tiêm vaccine: "+str(b-a))
@@ -1056,7 +1064,8 @@ def danhsachbodudieukientiem(vaccine,ngaykiemtra,tiemtoandan=False):
         matchngaymangthai = sotai_mangthai.get(soTai)
         # print("Ngày mang thai "+str(matchngaymangthai["NgayMangThai"]))
         if bo["PhanLoaiBo"] in bomangthai and matchngaymangthai is not None and matchngaymangthai["NgayMangThai"] < ngaymangthaitoidachophep:
-            print("Bò mang thai lớn hơn 240 ngày")
+            # print("Bò mang thai lớn hơn 240 ngày")
+            continue
         else:
             matchlstiem = sotai_duoctiem.get(soTai)
             if not ngaySinh:

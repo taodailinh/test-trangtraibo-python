@@ -34,6 +34,9 @@ class DB:
     def bonhaptrai_find(self, condition):
         return self.bonhaptrai.find(condition)
 
+    def bonhaptrai_find(self, condition,projection):
+        return self.bonhaptrai.find(condition,projection)
+
     def bonhaptrai_aggregate(self, pipeline):
         return self.bonhaptrai.aggregate(pipeline)
 

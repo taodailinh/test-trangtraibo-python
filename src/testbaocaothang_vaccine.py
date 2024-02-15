@@ -10,8 +10,8 @@ user = "admin"
 password = "admintest"
 
 startDate = "2024-02-01"
-endDate = "2024-02-04"
-today = "2024-02-04"
+endDate = "2024-02-15"
+today = "2024-02-15"
 
 danhsachnhombo = ["XuatBan", "Bo", "Be"]
 
@@ -110,4 +110,4 @@ vaccine.tongSo_boDuDieuKienTiem_THT(today,nhomVaccine["THT"])
 
 # vaccine.lichSuTiem(today,"THT")
 
-vaccine.danhsachbodudieukientiem("THT",today)
+vaccine.danhsachbodudieukientiem("UKT",today,True)

@@ -88,10 +88,8 @@ giongBo = [
 
 lanPhoi1 = {"min": 1, "max": 1}
 lanPhoi2 = {"min": 2, "max": 2}
-lanPhoi3 = {"min": 3, "max": 999}
+lanPhoi3 = {"min": 3, "max": 3}
 
-
-"""
 
 """
 
@@ -113,6 +111,7 @@ phoiGiong.tongSo_XLSS(startDate, endDate, "9")
 # 6	Tổng số bò được xử lý hormone sinh sản 10
 phoiGiong.tongSo_XLSS(startDate, endDate, "10")
 
+
 # 7	Tổng số bò được gieo tinh nhân tạo từ bò lên giống tự nhiên (không xử lý sinh sản)
 phoiGiong.tongSo_phoiGiongTuNhien(startDate, endDate)
 
@@ -123,7 +122,6 @@ phoiGiong.tongSo_phoiGiongTuNhien(startDate, endDate)
 
 # 8	Tổng số bò được ghép đôi phối giống với bò đực giống
 phoiGiong.tongSoBoGhepDuc(startDate, endDate)
-
 # 9	Tổng số bò gieo tinh nhân tạo được khám thai: (Chỉ tiêu đánh gia các chỉ tiêu dưới)
 phoiGiong.tongSoBoGieoTinhNhanTaoDuocKhamThai(startDate, endDate)
 # 10	Tổng số bò xử lý sinh sản có thai
@@ -134,6 +132,7 @@ phoiGiong.tongSo_khongThai_sauXLSS_ver2(startDate,endDate)
 
 # 12	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo có thai
 phoiGiong.tongSo_coThai_sauPhoi_tuNhien_ver2(startDate,endDate)
+
 
 # 13	Tổng số bò lên giống tự nhiên được gieo tinh nhân tạo không có thai
 phoiGiong.tongSo_khongThai_sauPhoi_tuNhien_ver3(startDate,endDate)
@@ -149,13 +148,13 @@ phoiGiong.tongSo_coThai_sauGhepDuc_ver2(startDate,endDate)
 # phoiGiong.tongSo_khongThai_sauGhepDuc(startDate,endDate)
 phoiGiong.tongSo_khongThai_sauGhepDuc_ver2(startDate,endDate)
 # 17	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 1
-phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi1)
+# phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi1)
 
 # 18	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 2
-phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi2)
+# phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi2)
 
 # 19	Tỷ lệ đậu thai do gieo tinh nhân tạo lần 3
-phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi3)
+# phoiGiong.tyLe_DauThai_theoLanPhoi(startDate, endDate, lanPhoi3)
 phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi1)
 phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi2)
 phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi3)
@@ -163,9 +162,11 @@ phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi3)
 phoiGiong.tyLe_dauThai_trungBinh(startDate,endDate)
 
 
+"""
 
 for bo in giongBo:
     print("Giống bò " + bo + " :")
+    """
     # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò lần 1
     phoiGiong.tyLeDauThai_gieoTinh_theoGiongBo(startDate, endDate, bo, lanPhoi1)
     # 21	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò lần 2
@@ -176,7 +177,7 @@ for bo in giongBo:
 
     # 23	Tỷ lệ đậu thai do ghép đực của giống bò Brahman
     phoiGiong.tyLe_DauThai_ghepDuc_theoGiongBo(startDate, endDate, bo)
-
+    """
     phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo(
         startDate,
         endDate,
@@ -184,7 +185,7 @@ for bo in giongBo:
     )
 
     phoiGiong.khoangCachGiua2LuaDe(bo)
-"""
+    """
 
 """
 

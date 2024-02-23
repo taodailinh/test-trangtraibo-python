@@ -13,8 +13,8 @@ user = "admin"
 password = "admintest"
 
 startDate = "2024-01-01"
-endDate = "2024-01-26"
-today = "2024-01-26"
+endDate = "2024-01-31"
+today = "2024-01-31"
 
 # Connect to mongodb
 # client = MongoClient(constants.CONNECTION_STRING)

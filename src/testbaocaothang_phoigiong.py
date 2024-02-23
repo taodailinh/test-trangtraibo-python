@@ -92,6 +92,7 @@ lanPhoi3 = {"min": 3, "max": 3}
 
 
 """
+"""
 
 # 1	Tổng số bò đực giống đã được đề xuất thanh lý
 phoiGiong.tongSoBoThanhLy_BoDucGiong(startDate, endDate, boDucGiong)
@@ -162,10 +163,11 @@ phoiGiong.tyLeDauThai_gieoTinh(startDate,endDate,lanPhoi3)
 phoiGiong.tyLe_dauThai_trungBinh(startDate,endDate)
 
 
-"""
+
 
 for bo in giongBo:
     print("Giống bò " + bo + " :")
+    """
     """
     # 20	Tỷ lệ đậu thai do gieo tinh nhân tạo của giống bò lần 1
     phoiGiong.tyLeDauThai_gieoTinh_theoGiongBo(startDate, endDate, bo, lanPhoi1)
@@ -177,7 +179,6 @@ for bo in giongBo:
 
     # 23	Tỷ lệ đậu thai do ghép đực của giống bò Brahman
     phoiGiong.tyLe_DauThai_ghepDuc_theoGiongBo(startDate, endDate, bo)
-    """
     phoiGiong.tuoiPhoiGiongLanDau_theoGiongBo(
         startDate,
         endDate,
